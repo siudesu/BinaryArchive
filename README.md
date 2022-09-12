@@ -127,29 +127,28 @@ These are designed to work in place of Solar2D API functions by the same name:
 
 3. `What's the purpose of using a binary archive file?`
    
-   Primary purpose is simply to hide project assets from plain sight, images in particular.
-   </br>Second purpose is to implement a method that uses data from an archive without the need to first extract data to disk, such as a zip file.
-   </br>This, of course, is part of the limitations, see below `FAQ #5`.
+   1. Hide project assets from plain sight, images in particular.
+   2. Implement a method that uses data from an archive without the need to first extract data to disk, such as a zip file. This, of course, is part of the limitations, see below `FAQ #5`.
 
 4. `Any chance of adding some form of protection in the future?`
 
-	Because files in archives are processed individually, *theoretically* any method, whether encryption or compression, can be applied as long as there exists a library for it in Lua/Solar2D. Might look into it in the future if there's a big desire for it.
+	Because files in archives are processed individually, *theoretically* any method, whether encryption or compression, can be applied as long as there exists a library for it in Lua/Solar2D. Might look into it in the future if there's a desire for it.
 
-5. `What about supporting other files types?`
+5. `What about supporting other file types?`
    
    Current restrictions of file types are implemented to avoid confusion; using a binary archive file itself has no limitation.
    </br>
    To elaborate, Solar2D only supports loading assets from disk, our intended method however is to feed data from RAM.
-   It does provide a way to create "external textures"; the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) takes advantage of this and takes it further with the ability to feed texture data from RAM.
+   It does provide a way to create "external textures"; the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) takes advantage of this and takes it a step further with the ability to feed texture data from RAM.
    </br>
    </br>
-   But, to answer the question, I think only fonts and audio data are the only type of assets worth including (leaving out HTML and related files), and a technical implementation is first required which is out of my scope-- I'm just doing the easy "packaging" part.
+   But, to answer the question, I think fonts and audio data are the only type of assets worth considering (leaving out HTML and related files), and a technical implementation is first required which is out of my scope-- I'm just doing the easy "packaging" part.
    </br>
    </br>
-   Mentioning audio files, the same [creator](https://github.com/ggcrunchy) of the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which may open the door to do the same with audio files, those may be added in the future.
+   Speaking of audio files, the same [creator](https://github.com/ggcrunchy) of the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which may open the door to do the same with audio files, those may be added in the future.
    </br>
    </br>
-   A last comment on restrictions, I am actually debating whether to keep or remove them. The current setup forces extension name on files, and not everyone might want to use a file extension. Additionally, other file types such as txt, and JSON can probably be included as well, and currently are not.
+   A last note on restrictions, I am actually debating whether to keep or remove them. The current setup forces extension name on files, and not everyone might want to use a file extension. Additionally, other file types such as txt, and JSON can probably be included as well, but currently are not.
 
 </br>
 
