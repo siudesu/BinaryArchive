@@ -445,4 +445,4 @@ local rect = display.newRect( 150, 150, 50, 50 )
 </br>
 
 ## License
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/siudesu/BinaryArchive/blob/main/LICENSE) for more information.

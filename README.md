@@ -110,7 +110,7 @@ These are designed to work in place of Solar2D API functions by the same name:
 
 </br>
 
-## For more details on usage please see [DOCS](ok)
+## For more details on usage please see [DOCS](https://github.com/siudesu/BinaryArchive/blob/main/DOCUMENTATION.md)
 
 </br>
 
@@ -156,4 +156,4 @@ These are designed to work in place of Solar2D API functions by the same name:
 ---
 
 ## License
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/siudesu/BinaryArchive/blob/main/LICENSE) for more information.
