@@ -19,7 +19,7 @@
 </br>
 
 ## Requirements
-- Bytemap plugin by [Steven Johnson](https://github.com/ggcrunchy), must be added in `build.settings`:
+- [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) by [Steven Johnson](https://github.com/ggcrunchy), must be added in `build.settings`:
 ```lua
 	plugins =
 	{
@@ -140,13 +140,13 @@ These are designed to work in place of Solar2D API functions by the same name:
    Current restrictions of file types are implemented to avoid confusion; using a binary archive file itself has no limitation.
    </br>
    To elaborate, Solar2D only supports loading assets from disk, our intended method however is to feed data from RAM.
-   It does provide a way to create "external textures"; the Bytemap plugin takes advantage of this and takes it further with the ability to feed texture data from RAM.
+   It does provide a way to create "external textures"; the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) takes advantage of this and takes it further with the ability to feed texture data from RAM.
    </br>
    </br>
    But, to answer the question, I think only fonts and audio data are the only type of assets worth including (leaving out HTML and related files), and a technical implementation is first required which is out of my scope-- I'm just doing the easy "packaging" part.
    </br>
    </br>
-   Mentioning audio files, the same [creator](https://github.com/ggcrunchy) of the Bytemap plugin has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which may open the door to do the same with audio files, those may be added in the future.
+   Mentioning audio files, the same [creator](https://github.com/ggcrunchy) of the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which may open the door to do the same with audio files, those may be added in the future.
    </br>
    </br>
    A last comment on restrictions, I am actually debating whether to keep or remove them. The current setup forces extension name on files, and not everyone might want to use a file extension. Additionally, other file types such as txt, and JSON can probably be included as well, and currently are not.
