@@ -26,23 +26,26 @@
 </br>
 
 # *.new
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.new( options ) </div>
+Creates a new binary archive.
 
-- Creates a new binary archive. This function takes a single argument, `options`, which is a [Table](https://docs.coronalabs.com/api/type/Table.html) that accepts basic parameters listed below.
+### Syntax:
+- MODULE.new( options )
 
 ### Parameters:
 
-- signature (optional)
-   - [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. This value must be provided when loading an archive. Default is `"BA22"`.
+- options (required)
+	- [Table](https://docs.coronalabs.com/api/type/Table.html). Containing the following basic parameters:
+		- signature (optional)
+			- [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. This value can be used when loading an archive. Default is `"BA22"`.
 
-- baseDir (required)
-   - [String](https://docs.coronalabs.com/api/type/String.html). Full path to directory where assets are located on disk. All supported file types found at this location and sub-directories are appended to archive.
+		- baseDir (required)
+			- [String](https://docs.coronalabs.com/api/type/String.html). Full path to directory where assets are located on disk. All supported file types found at this location and sub-directories are appended to archive.
 
-- output (optional)
-   - [String](https://docs.coronalabs.com/api/type/String.html). Name given to the archive file. Default is `"data.bin"`. 
+		- output (optional)
+			- [String](https://docs.coronalabs.com/api/type/String.html). Name given to the archive file. Default is `"data.bin"`. 
 
-- fileList (optional)
-   - [Table](https://docs.coronalabs.com/api/type/Table.html). If provided, only specified files in this list are appended to archive. Files must reside within `baseDir` and their names must include relative paths`.
+		- fileList (optional)
+			- [Table](https://docs.coronalabs.com/api/type/Table.html). If provided, only specified files in this list are appended to archive. Files must reside within `baseDir` and their names must include relative paths.
 
 </br>
 
@@ -96,27 +99,31 @@ binarch.new( options2 )
 </br>
 
 # *.load
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.load( options ) </div>
+Loads a binary archive. Returns a `binaryArchiveData` [Table](https://docs.coronalabs.com/api/type/Table.html) that can be used to toggle between multiple archives.
 
-- Loads a binary archive. This function takes a single argument, `options`, which is a table with basic parameters listed below.
-- Returns a `binaryArchiveData` table that can be used to toggle between multiple archives.
+### Syntax:
+
+- MODULE.load( options )
 
 ### Parameters:
 
-- signature (optional)
-   - [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. If none provided it will use default value. Default is `"BA22"`.
+- options (required)
+	- [Table](https://docs.coronalabs.com/api/type/Table.html). Containing the following basic parameters:
 
-- file (required)
-   - [String](https://docs.coronalabs.com/api/type/String.html). Relative path to binary archive in your Solar2D project.
+		- signature (optional)
+		   - [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. If none provided it will use default value. Default is `"BA22"`.
 
-- enableCache (optional)
-   - [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). Enable or disable the caching of binary data when fetched, minimizing disk access. Default is `false`. 
-     > Note: If set `true` then `*.clearCache()` or ` *.clearBinaryData()` should be used respectively to free up memory.
+		- file (required)
+		   - [String](https://docs.coronalabs.com/api/type/String.html). Relative path to binary archive in your Solar2D project.
 
-- imageSuffix (required if set in config.lua)
-   - [Table](https://docs.coronalabs.com/api/type/Table.html). If [dynamic image selection](https://docs.coronalabs.com/guide/basics/configSettings/index.html#dynamic-image-selection) is configured in `config.lua`, then it must also be provided here. 
+		- enableCache (optional)
+		   - [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). Enable or disable the caching of binary data when fetched, minimizing disk access. Default is `false`. 
+			 > Note: If set `true` then `*.clearCache()` or ` *.clearBinaryData()` should be used respectively to free up memory.
 
-> Note: When an archive is loaded it's active automatically.
+		- imageSuffix (*required*)
+		   - [Table](https://docs.coronalabs.com/api/type/Table.html). If [dynamic image selection](https://docs.coronalabs.com/guide/basics/configSettings/index.html#dynamic-image-selection) is configured in `config.lua`, then it must also be provided here. 
+
+> Note: When an archive is loaded it is automatically set active.
 
 </br>
 
@@ -132,6 +139,7 @@ local options = {
 			file = "data.bin",
 		}
 
+-- load archive
 binarch.load( options )
 
 -- create new object from assets in archive
@@ -160,15 +168,16 @@ local options2 = {
 			}
 		}
 
+-- create display groups to insert our objects
 local airplaneGroup = display.newGroup()
 local carGroup = display.newGroup()
 
 -- archives are set active when loaded, however, only one archive can be active at any time
 local airplanesBin = binarch.load( options1 )
-local carsBin = binarch.load( options2 )	-- last archive loaded is active
+local carsBin = binarch.load( options2 )	-- last archive loaded is set active
 
 -- create some airplane objects
-binarch.setCurrentArchive( airplanesBin ) -- set desired archive as active
+binarch.setCurrentArchive( airplanesBin ) -- toggle archive
 
 local jet1 = binarch.newImageRect( airplaneGroup, "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
 	jet1.x = 150
@@ -179,7 +188,7 @@ local airbus1 = binarch.newImageRect( airplaneGroup, "airbus/a300.png", 200, 200
 	airbus1.y = 150
 	
 -- create some car objects
-binarch.setCurrentArchive( carsBin ) -- set desired archive as active
+binarch.setCurrentArchive( carsBin ) -- toggle archive
 
 local skyline1 = binarch.newImageRect( carGroup, "imports/nissan/gtr32.png", 100, 50 )
 	skyline1.x = 100
@@ -193,9 +202,10 @@ local supra1 = binarch.newImageRect( carGroup, "imports/toyota/supra.png", 100, 
 </br>
 
 # *.setCurrentArchive
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.setCurrentArchive( binaryArchiveData ) </div>
+Sets a binary archive active.
 
-- Sets a binary archive as active. This function takes a single argument, `binaryArchiveData`.
+### Syntax:
+- MODULE.setCurrentArchive( binaryArchiveData )
 
 ### Parameters:
 
@@ -224,7 +234,7 @@ local airplanesBin = binarch.load( options1 )
 local carsBin = binarch.load( options2 )	-- last archive loaded is active
 
 -- create airplane object
-binarch.setCurrentArchive( airplanesBin ) -- set desired archive as active
+binarch.setCurrentArchive( airplanesBin ) -- toggle archive
 
 local jet1 = binarch.newImageRect( airplaneGroup, "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
 	jet1.x = 150
@@ -232,7 +242,7 @@ local jet1 = binarch.newImageRect( airplaneGroup, "jets/jumbo/Dassault Falcon 7X
 
 
 -- create some car objects
-binarch.setCurrentArchive( carsBin ) -- set desired archive as active
+binarch.setCurrentArchive( carsBin ) -- toggle archive
 
 local skyline1 = binarch.newImageRect( carGroup, "imports/nissan/gtr32.png", 100, 50 )
 	skyline1.x = 100
@@ -243,16 +253,18 @@ local skyline1 = binarch.newImageRect( carGroup, "imports/nissan/gtr32.png", 100
 </br>
 
 # *.clearCache
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.clearCache( binaryArchiveData ) </div>
+Clears **ALL** cached data from specified archive.
 
-- Clears ALL cached binary data from specified archive. This function takes a single argument, `binaryArchiveData`.
+### Syntax:
+- MODULE.clearCache( binaryArchiveData )
 
 ### Parameters:
 
-- binaryArchiveData (*optional*, active archive will be used if none provided)
+- binaryArchiveData (optional)
 	- [Table](https://docs.coronalabs.com/api/type/Table.html). The `binaryArchiveData` is the table returned when using [*.load](#load).
-
-> Note: Clearing cache does nothing unless "enableCache" is set to `true`. Clearing cache does not affect existing objects.
+	
+	- If note provided, it will default to current active archive
+> Note: Clearing cache does nothing unless "enableCache" flag is set to `true`. Clearing cache does not affect existing objects.
 
 </br>
 
@@ -265,6 +277,9 @@ local options = {
 			file = "assets/data1.bin",
 			enableCache = true,
 		}
+
+-- load archive
+binarch.load( options )
 
 -- create objects from archive
 local jet1 = binarch.newImageRect( "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
@@ -282,9 +297,10 @@ binarch.clearCache()
 </br>
 
 # *.clearBinaryData
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.clearBinaryData( filename, binaryArchiveData ) </div>
+Clears cache from specified data and archive.
 
-- Clears cache of specified binary data from specified archive.
+### Syntax:
+- MODULE.clearBinaryData( filename, binaryArchiveData )
 
 ### Parameters:
 
@@ -320,14 +336,15 @@ binarch.clearBinaryData("graphics/background.png")
 </br>
 
 # *.setFileSignature
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.setFileSignature( signature ) </div>
+Sets a default file signature to use for creating or loading archives.
 
-- Sets a default file signature to use for creating or loading archives. This function takes a single argument, `signature`.
+### Syntax:
+- MODULE.setFileSignature( signature )
 
 ### Parameters:
 
 - signature (required)
-	- [String](https://docs.coronalabs.com/api/type/String.html). The `signature` can be any form of a valid string.
+	- [String](https://docs.coronalabs.com/api/type/String.html). The `signature` can be any valid [String](https://docs.coronalabs.com/api/type/String.html).
 
 ## Example
 ```lua
@@ -348,9 +365,10 @@ binarch.load( options )
 </br>
 
 # *.getFileSignature
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.getFileSignature() </div>
+Returns the current default file signature.
 
-- Returns the default file signature. This function takes no arguments.
+### Syntax:
+- MODULE.getFileSignature()
 
 ## Example
 ```lua
@@ -365,27 +383,36 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 </br>
 
 # *.newImage
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newImage( [parent,] filename [, x, y] ) </div>
+Returns a [DisplayObject](https://docs.coronalabs.com/api/type/DisplayObject/index.html).
+
+### Syntax:
+- MODULE.newImage( [parent,] filename [, x, y] )
 
 ### Parameters:
 - Same as [display.newImage](https://docs.coronalabs.com/api/library/display/newImage.html) except no `baseDir`. 
-> For using `*.newImage( [parent,] imageSheet, frameIndex [, x, y] )` use [display.newImage](https://docs.coronalabs.com/api/library/display/newImage.html) instead.
+> For `*.newImage( [parent,] imageSheet, frameIndex [, x, y] )` use [display.newImage](https://docs.coronalabs.com/api/library/display/newImage.html) instead.
 
 
 
 </br>
 
 # *.newImageRect
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newImageRect( [parent,] filename, width, height ) </div>
+Returns a [DisplayObject](https://docs.coronalabs.com/api/type/DisplayObject/index.html).
+
+### Syntax:
+- MODULE.newImageRect( [parent,] filename, width, height )
 
 ### Parameters:
 - Same as [display.newImageRect](https://docs.coronalabs.com/api/library/display/newImageRect.html) except no `baseDir`. 
-> For using `*.newImageRect( [parent,] imageSheet, frameIndex, width, height )` use [display.newImageRect](https://docs.coronalabs.com/api/library/display/newImageRect.html) instead.
+> For `*.newImageRect( [parent,] imageSheet, frameIndex, width, height )` use [display.newImageRect](https://docs.coronalabs.com/api/library/display/newImageRect.html) instead.
 
 </br>
 
 # *.newImageSheet
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newImageSheet( filename, options ) </div>
+Returns an [ImageSheet](https://docs.coronalabs.com/api/type/ImageSheet/index.html) object.
+
+### Syntax:
+- MODULE.newImageSheet( filename, options )
 
 ### Parameters:
 - Same as [graphics.newImageSheet](https://docs.coronalabs.com/api/library/graphics/newImageSheet.html) except no `baseDir`. 
@@ -393,7 +420,10 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 </br>
 
 # *.newTexture
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newTexture( filename ) </div>
+Returns a [TextureResource](https://docs.coronalabs.com/api/type/TextureResource/index.html) object.
+
+### Syntax:
+- MODULE.newTexture( filename )
 
 ### Parameters:
 - Only `filename` is required. Creates an `image` type of [TextureResourceBitmap](https://docs.coronalabs.com/api/type/TextureResourceBitmap/index.html).
@@ -401,7 +431,10 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 </br>
 
 # *.newMask
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newMask( filename ) </div>
+Returns a [Mask](https://docs.coronalabs.com/api/type/Mask/index.html) object.
+
+### Syntax:
+- MODULE.newMask( filename )
 
 ### Parameters:
 - Same as [graphics.newMask](https://docs.coronalabs.com/api/library/graphics/newMask.html) except no `baseDir`. 
@@ -409,15 +442,23 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 </br>
 
 # *.newOutline
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newOutline( coarsenessInTexels, imageFileName ) </div>
+Returns a [Table](https://docs.coronalabs.com/api/type/Table.html) of x and y coordinates in content space that can be used as the outline for the [physics.addBody](https://docs.coronalabs.com/api/library/physics/addBody.html).
+
+### Syntax:
+- MODULE.newOutline( coarsenessInTexels, imageFileName )
 
 ### Parameters:
 - Same as [graphics.newOutline](https://docs.coronalabs.com/api/library/graphics/newOutline.html) except no `baseDir`. 
 
+> For `*.newOutline( coarsenessInTexels, imageSheet, frameIndex )` use [graphics.newOutline](https://docs.coronalabs.com/api/library/graphics/newOutline.html) instead.
+
 </br>
 
 # *.newEmitter
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newEmitter( emitterParams ) </div>
+Returns a [EmitterObject](https://docs.coronalabs.com/api/type/EmitterObject/index.html).
+
+### Syntax:
+- MODULE.newEmitter( emitterParams )
 
 ### Parameters:
 - Same as [graphics.newEmitter](https://docs.coronalabs.com/api/library/display/newEmitter.html) except no `baseDir`. 
@@ -425,20 +466,23 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 </br>
 
 # *.newImagePaint
-<div style="background-color:#23CBFF10;font-size:16px;vertical-align:middle;padding:5px"> Syntax: MODULE.newImagePaint( filename ) </div>
+Returns a [BitmapPaint](https://docs.coronalabs.com/api/type/BitmapPaint/index.html) that can be used with [object.fill](https://docs.coronalabs.com/api/type/ShapeObject/fill.html#bitmap-image-fill).
+
+### Syntax:
+- MODULE.newImagePaint( filename )
 
 ### Parameters:
-- Only `filename` is required. Returns a [Table](https://docs.coronalabs.com/api/type/Table.html) to be used as [Bitmap Image Fill](https://docs.coronalabs.com/api/type/ShapeObject/fill.html#bitmap-image-fill).
+- The `filename` of an image file as stored in an archive.
 
 ## Example
 ```lua
 -- load module
 local binarch = require( "m_binary_archive" )
 
--- load binary file
+-- load archive
 binarch.load( {file = "assets/data.bin"} )
 
--- create new rectangle and do object fill
+-- create a new rectangle and apply object fill
 local rect = display.newRect( 150, 150, 50, 50 )
 	rect.fill = binarch.newImagePaint( "Fishies/fish.small.red.png" )
 ```
