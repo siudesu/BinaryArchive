@@ -59,7 +59,7 @@ local options = {
 }
 
 -- load binary file
-binarch.Load(options)
+binarch.load(options)
 
 -- create newImageRect using wrapper function; parameters are the same as using display.newImageRect()
 local balloon = binarch.newImageRect( "SnapshotEraser/balloon.jpg", 200, 240 )

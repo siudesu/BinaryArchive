@@ -436,7 +436,7 @@ print("Current File Signature is: " .. tostring(currentFileSignature))
 local binarch = require( "m_binary_archive" )
 
 -- load binary file
-binarch.Load( {file = "assets/data.bin"} )
+binarch.load( {file = "assets/data.bin"} )
 
 -- create new rectangle and do object fill
 local rect = display.newRect( 150, 150, 50, 50 )
