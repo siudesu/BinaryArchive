@@ -667,6 +667,27 @@ print("Decrypted data:", tempData)
 
 </br>
 
+# *.setDebugMode
+Enable or Disable debugMode mode to assist in troubleshoot process. 
+
+### Syntax:
+- MODULE.setDebugMode(enable)
+
+### Parameters:
+
+- enable (required)
+	- [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). 
+
+## Example
+```lua
+local binarch = require( "m_binary_archive" )
+
+-- enable debug
+binarch.setDebugMode(true)
+```
+
+</br>
+
 # *.newImage
 Returns a [DisplayObject](https://docs.coronalabs.com/api/type/DisplayObject/index.html).
 
