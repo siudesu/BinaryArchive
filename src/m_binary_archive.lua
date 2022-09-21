@@ -229,7 +229,7 @@ local M = {}
 		local o = options_
 			if not o or type(o) ~= "table" then error("Missing parameters table.", -1) end
 			if not o.baseDir then error("Parameter 'baseDir' must be provided.", -1) end
-			if not o.key then error("Parameter 'key' must be provided.", -1) end
+			if not o.key and openssl then error("Parameter 'key' must be provided.", -1) end
 			-- change backslash to forward slash to maintain compatibility
 			o.baseDir = o.baseDir:gsub("\\", "/")
 
@@ -270,7 +270,7 @@ local M = {}
 		local fileToload = o.file
 			if not fileToload then error("Parameter 'file' must be provided.", -1) end
 		local key = o.key
-			if not key then error("Parameter 'key' must be provided.", -1) end
+			if not key and openssl then error("Parameter 'key' must be provided.", -1) end
 		local imageSuffix = ("table" == type(o.imageSuffix)) and o.imageSuffix or {}
 			if not imageSuffix and d_imageSuffix then error("Parameter 'imageSuffix' must be provided.", -1) end
 
@@ -543,6 +543,7 @@ local M = {}
 		return md5chuncks:final() -- this may not be actual function name.
 	end
 
+	-- enableSSL ; optional for encryption
 	function M.enableSSL()
 		openssl = require( "plugin.openssl" )
 		cipher = openssl.get_cipher( "aes-256-cbc" )
