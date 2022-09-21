@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.21.1
+--	Last Revision: 2022.09.21.2
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -15,12 +15,13 @@ end
 -- requirements
 local bytemap = require( "plugin.Bytemap" )		-- for image file support
 local lfs = require( "lfs" )					-- for generating fileList
-local openssl = nil								-- for encryption; initialized with *.enableSSL()
+local openssl = nil								-- for encryption; initialized with M.enableSSL()
 
 
 -- localization
 local assert = assert
 local error = error
+local pairs = pairs
 local print = print
 local tonumber = tonumber
 local type = type
@@ -37,13 +38,13 @@ local t_sort = table.sort
 
 
 -- module variables
-local cipher = nil	-- initialized with *.enableSSL()
-local md5 = nil		-- initialized with *.enableSSL()
+local cipher = nil	-- initialized with M.enableSSL()
+local md5 = nil		-- initialized with M.enableSSL()
 
 local fileHeader = "BA22"	-- file signature, can be changed here or temporarily using M.setFileSignature().
 local debugMode = true
 local currentArchive
-local delimiter = "\n"
+local delimiter = "\n"	-- should NOT be changed, data structure is based off lines.
 local delimiterSize = s_len(delimiter)
 local indexCounter = s_format("%08x", 0x0) 
 local indexCounterSize = s_len(indexCounter) + delimiterSize
@@ -116,7 +117,7 @@ local M = {}
 			binFile:seek("set", currentArchive[file].offset)
 
 		local binData = binFile:read(currentArchive[file].bytes)
-		local finalData = openssl and cipher:decrypt(binData, currentArchive.key) or binData -- decrypt only if openSSL is enabled.
+		local finalData = openssl and cipher:decrypt(binData, currentArchive.key) or binData -- decrypt only if openssl is enabled.
  
 		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = finalData, format = "mask" } or
 											bytemap.loadTexture{ from_memory = finalData }
@@ -156,7 +157,7 @@ local M = {}
 	
 	local function updateTotalFiles(path_, num_)
 		local file, err = io_open(path_, 'r+b')
-			if not file then error("Error opening archive, " .. err) end
+			if not file then error("Could not open " .. err) end
 			file:seek("set", s_len(fileHeader)+1)
 
 			file:write(s_format("%08x", num_))
@@ -172,7 +173,7 @@ local M = {}
 		local outputFile = baseDir .. "\n"
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then error("Error encountered. Verify baseDir: " .. baseDir .. " is valid.") end
+			if not file then error("Could not open : " .. err) end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
@@ -183,8 +184,8 @@ local M = {}
 		for i=1, #fileList do
 			local path = baseDir .. "/" .. fileList[i]
 				sendToConsole("appending: " .. path)
-			local binFile = io_open( path, "rb" )
-			if not binFile then error("Could not open " .. path) end
+			local binFile, err = io_open( path, "rb" )
+				if not binFile then error("Could not open " .. err) end
 			local binData = binFile:read( "*a" )
 			io_close( binFile )
 			file:write(fileList[i] .. delimiter)		-- append file name
@@ -208,7 +209,7 @@ local M = {}
 		local encryptionKey = o.key
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then error("Error encountered. Verify baseDir: " .. baseDir .. " is valid.") end
+			if not file then error("Could not open " .. err) end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
@@ -220,10 +221,10 @@ local M = {}
 			local path = baseDir .. "/" .. fileList[i]
 				sendToConsole("appending: " .. path)
 			local binFile, err = io_open( path, "rb" )
-			if not binFile then error("Could not open " .. err) end
+				if not binFile then error("Could not open " .. err) end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
-			local finalData = openssl and cipher:encrypt( binData, encryptionKey ) or binData -- encrypt only if openSSL is enabled.
+			local finalData = openssl and cipher:encrypt( binData, encryptionKey ) or binData -- encrypt only if openssl is enabled.
 
 			file:write(fileList[i] .. delimiter)			-- append file name
 			file:write(s_len(finalData) .. delimiter)		-- append data size in bytes
@@ -268,7 +269,7 @@ local M = {}
 				if ( i == 1 ) then
 					-- overwrite file with no values ; could use lfs, but this might be simpler
 					local file, err = io_open(path, "w+")
-						if err then error("Could not overwrite file: " .. err .. "\nIs file in use?") end
+						if err then error("Could not open " .. err) end
 						file:write()
 						io_close(file)
 						createData(o)
@@ -280,7 +281,7 @@ local M = {}
 	end
 
 	-- load ; loads an existing binary archive
-	function M.load(options_)
+	function M.load(options_, overWritePath)
 		-- Creates and returns a binaryArchiveData table.
 		local o = options_
 			if not o then error("Error loading file, no parameters found.", -1) end
@@ -301,13 +302,12 @@ local M = {}
 			binaryArchiveData.key = key
 
 		-- open binary archive file from app's directory.
-		local path = system.pathForFile( fileToload, system.ResourceDirectory)
+		local path = overWritePath and fileToload or system.pathForFile( fileToload, system.ResourceDirectory)
 			if not path then error("File not found: " .. tostring(fileToload), -1) end
-		local binFile = io_open( path, "rb" )	-- read in binary mode.
+		local binFile, err = io_open( path, "rb" )	-- read in binary mode.
+			if not binFile then error("Could not open " .. err) end
 
-		if not binFile then error("File not found: ", path) end
-
-		binaryArchiveData.path = path -- cache file path for future use in case multiple bin files are used.
+		binaryArchiveData.path = path -- cache file path for future use in case of multiple bin files.
 
 		-- check signature
 		if binFile:read("*l") ~= signature then
@@ -315,7 +315,7 @@ local M = {}
 		end
 
 		-- get number of stored files as specified
-		local totalFiles = tonumber(binFile:read("*l"), 16)
+		local totalFiles = tonumber(binFile:read("*l"), 16)	-- convert from hex to decimal
 		binaryArchiveData.totalFiles = totalFiles
 		sendToConsole("Binary archive has a total of " .. totalFiles .. " files.")
 
@@ -361,10 +361,13 @@ local M = {}
 
 	-- clear All Cache
 	function M.clearCache(binaryArchiveData_)
-		-- Clear up all cached data from specified archive, or currentArchive.
+		-- Clear up all cached data from specified archive, or currentArchive, including textures
 		local archive = binaryArchiveData_ or currentArchive
-		graphics.releaseTextures( { type="image" } ) -- release all textures
+
 		for k, v in pairs(archive.binaryData) do
+			if archive.binaryData[k].releaseSelf then
+				archive.binaryData[k]:releaseSelf()
+			end
 			archive.binaryData[k] = nil	-- nil out references
 			sendToConsole("Clearing cache:", k, v, archive.binaryData[k])
 		end
@@ -403,21 +406,21 @@ local M = {}
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then error("Error opening: " .. archive.path .. ", " .. err) end
+			if not binFile then error("Could not open " .. err) end
 			sendToConsole("Opening archive", binFile)
 			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("File fetched:", file)
 		local binData = binFile:read(archive[file].bytes)
-		return openSSL and cipher:decrypt(binData, archive.key) or binData -- return decrypted data if openSSL is enabled, else return data as is
+		return openssl and cipher:decrypt(binData, archive.key) or binData -- return decrypted data if openssl is enabled, else return data as is
 	end
 
-	-- fetchRaw ; same as fetch() but returns data as-is, no decryption performed
+	-- fetch Raw ; same as fetch() but returns data as-is, no decryption performed
 	function M.fetchRaw(name_, binaryArchiveData_)
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then error("Error opening: " .. archive.path .. ", " .. err) end
+			if not binFile then error("Could not open " .. err) end
 			sendToConsole("Opening archive", binFile)
 			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
 			binFile:seek("set", archive[file].offset)
@@ -429,14 +432,14 @@ local M = {}
 	function M.appendData(name_, data_, binaryArchiveData_)
 		local archive = binaryArchiveData_ or currentArchive
 		if archive[name_] then sendToConsole("Warning: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) return false end
-		local encyrptedData = cipher:encrypt( data_, archive.key )
+		local finalData = openssl and cipher:encrypt( data_, archive.key ) or data_
 		local file, err = io_open(archive.path, 'ab')
-			if not file then error("Error opening: " .. archive.path .. ", " .. err) end
+			if not file then error("Could not open " .. err) end
 			sendToConsole("Opening archive", file)
 
-			file:write(name_ .. delimiter)					-- append file name
-			file:write(s_len(encyrptedData) .. delimiter)   -- append data size in bytes
-			file:write(encyrptedData)                       -- append data
+			file:write(name_ .. delimiter)				-- append file name
+			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
+			file:write(finalData)						-- append data
 			io_close(file)
 			sendToConsole("Added data:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
@@ -455,15 +458,15 @@ local M = {}
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 
-		local encyrptedData = cipher:encrypt( binData, archive.key )
+		local encyrptedData = openssl and cipher:encrypt( binData, archive.key ) or binData
 
 		local file, err = io_open(archive.path, 'ab')
-			if not file then error("Error opening: " .. archive.path .. ", " .. err) end
+			if not file then error("Could not open " .. err) end
 			sendToConsole("Opening archive", file)
 			
 			file:write(name_ .. delimiter)					-- append file name
-			file:write(s_len(encyrptedData) .. delimiter)	-- append data size in bytes
-			file:write(encyrptedData)						-- append data
+			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
+			file:write(finalData)						-- append data
 			io_close(file)
 			sendToConsole("Added file:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
@@ -478,8 +481,7 @@ local M = {}
 
 		-- open binary archive file from app's directory.
 		local binFile = io_open( archive.path, "rb" )	-- read in binary mode.
-
-		if not binFile then error("File not found: ", archive.path) end
+			if not binFile then error("Could not open " .. err) end
 
 		-- check signature
 		if binFile:read("*l") ~= archive.signature then
@@ -526,13 +528,13 @@ local M = {}
 
 	-- encrypt ; encrypts data and returns results
 	function M.encrypt(string_, key_)
-		if not openSSL then sendToConsole("[BinaryArchiveModule] You must enable openSSL to use encrypt function") return false end
+		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use encrypt function") return false end
 		return cipher:encrypt( string_, key_)
 	end
 	
 	-- decrypt ; decrypts data and returns results
 	function M.decrypt(string_, key_)
-		if not openSSL then sendToConsole("[BinaryArchiveModule] You must enable openSSL to use decrypt function") return false end
+		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use decrypt function") return false end
 		return cipher:decrypt( string_, key_)
 	end
 
@@ -568,6 +570,14 @@ local M = {}
 		openssl = require( "plugin.openssl" )
 		cipher = openssl.get_cipher( "aes-256-cbc" )
 		md5 = openssl.get_digest( "md5" )
+	end
+
+	-- release texture ; provides a way to individually remove a texture, as oppose to graphics.releaseTextures( { type="image" } ) which removes ALL textures
+	function M.releaseTexture(filename_)
+		if currentArchive.binaryData[filename_] then
+			currentArchive.binaryData[filename_]:releaseSelf()
+			currentArchive.binaryData[filename_] = nil
+		end
 	end
 
 	-- Enable or Disable debugMode mode to assist in troubleshoot process.
@@ -641,7 +651,7 @@ local M = {}
 			-- create newImageRect
 			local newImageRect = display.newImageRect(group, currentArchive.binaryData[suffixedFilename].filename, currentArchive.binaryData[suffixedFilename].baseDir, w, h)
 
-			-- do not cache data if enableCache is not set to true
+			-- do not cache data if enableCache is not set 'true'
 			if not currentArchive.enableCache then
 				currentArchive.binaryData[suffixedFilename]:releaseSelf()
 				currentArchive.binaryData[suffixedFilename] = nil
@@ -681,7 +691,7 @@ local M = {}
 		-- create newImageRect
 		local newImageRect = display.newImageRect(group, currentArchive.binaryData[actualFile].filename, currentArchive.binaryData[actualFile].baseDir, w, h)
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[actualFile]:releaseSelf()
 			currentArchive.binaryData[actualFile] = nil
@@ -704,7 +714,7 @@ local M = {}
 			-- create newImageSheet
 			local newImageSheet = graphics.newImageSheet( currentArchive.binaryData[suffixedFilename].filename, currentArchive.binaryData[suffixedFilename].baseDir , options_ )
 
-			-- do not cache data if enableCache is not set to true
+			-- do not cache data if enableCache is not set 'true'
 			if not currentArchive.enableCache then
 				currentArchive.binaryData[suffixedFilename]:releaseSelf()
 				currentArchive.binaryData[suffixedFilename] = nil
@@ -744,7 +754,7 @@ local M = {}
 		-- create newImageSheet
 		local newImageSheet = graphics.newImageSheet( currentArchive.binaryData[actualFile].filename, currentArchive.binaryData[actualFile].baseDir , options_ )
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[actualFile]:releaseSelf()
 			currentArchive.binaryData[actualFile] = nil
@@ -754,7 +764,10 @@ local M = {}
 	end
 	
 	function M.newTexture(filename_)
-		-- Returns a newTexture from graphics library.
+		-- Returns a newTexture from Bytemap plugin, essentially works the same as a texture from graphics library.
+		-- Textures are cached in order to imitate graphics.newTexture, 
+		-- however, graphics.releaseTextures( { type="image" } ) has no effect
+		-- and should be removed with M.releaseTexture()
 		if not currentArchive then sendToConsole("No current archive set.") ; return end
 
 		local filename = filename_
@@ -764,17 +777,9 @@ local M = {}
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
-		
-		-- create newTexture
-		local newTexture = graphics.newTexture( { type="image", filename=currentArchive.binaryData[filename].filename, baseDir=currentArchive.binaryData[filename].baseDir } )
 
-		-- do not cache data if enableCache is not set to true
-		if not currentArchive.enableCache then
-			currentArchive.binaryData[filename]:releaseSelf()
-			currentArchive.binaryData[filename] = nil
-		end
-
-		return newTexture
+		-- return Bytemap texture
+		return currentArchive.binaryData[filename]
 	end
 	
 	function M.newMask(filename_)
@@ -792,7 +797,7 @@ local M = {}
 		-- create newMask
 		local newMask = graphics.newMask( currentArchive.binaryData[filename].filename, currentArchive.binaryData[filename].baseDir )
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[filename]:releaseSelf()
 			currentArchive.binaryData[filename] = nil
@@ -816,7 +821,7 @@ local M = {}
 		-- create outline
 		local outline = graphics.newOutline( coarsenessInTexels_, currentArchive.binaryData[filename].filename, currentArchive.binaryData[filename].baseDir )
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[filename]:releaseSelf()
 			currentArchive.binaryData[filename] = nil
@@ -843,7 +848,7 @@ local M = {}
 		-- create emitter
 		local emitter = display.newEmitter( emitterParams_, currentArchive.binaryData[filename].baseDir )
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[filename]:releaseSelf()
 			currentArchive.binaryData[filename] = nil
@@ -857,8 +862,8 @@ local M = {}
 	---- Custom Functions
 	----
 	----------------------------------------------------
-	function M.newImagePaint(filename_)
-		-- Returns a fill data table.
+	function M.imagePaint(obj_, filename_)
+		-- Applies fill effect on obj, the approach below is necessary to apply the fill right away and avoid textures being released prematurely.
 		if not currentArchive then sendToConsole("No current archive set.") ; return end
 
 		local filename = filename_
@@ -869,15 +874,44 @@ local M = {}
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
 
-		local paint = { type="image", filename=currentArchive.binaryData[filename].filename, baseDir=currentArchive.binaryData[filename].baseDir }
+		obj_.fill = { type="image", filename=currentArchive.binaryData[filename].filename, baseDir=currentArchive.binaryData[filename].baseDir }
 
-		-- do not cache data if enableCache is not set to true
+		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[filename]:releaseSelf()
 			currentArchive.binaryData[filename] = nil
 		end
-		return paint
 	end
 
+	function M.compositePaint(obj_, file1_, file2_)
+		-- Applies composite fill effect on obj, the approach below is necessary to apply the fill right away and avoid textures being released prematurely.
+		if not currentArchive then sendToConsole("No current archive set.") ; return end
+
+		local filename1 = file1_
+		local filename2 = file2_
+
+		-- fetch non-suffixed file data
+		if not currentArchive[filename1] then error("File '" .. filename1 .. "' not found.", -2) end
+		if not currentArchive[filename2] then error("File '" .. filename2 .. "' not found.", -2) end
+
+		-- load texture if not previously loaded, or removed.
+		if not currentArchive.binaryData[filename1] then loadTexture(filename1) end
+		if not currentArchive.binaryData[filename2] then loadTexture(filename2) end
+		
+		obj_.fill = { 
+				type="composite", 
+				paint1 = { type="image", filename = currentArchive.binaryData[filename1].filename, baseDir = currentArchive.binaryData[filename1].baseDir },
+				paint2 = { type="image", filename = currentArchive.binaryData[filename2].filename, baseDir = currentArchive.binaryData[filename2].baseDir },
+			}
+
+		-- do not cache data if enableCache is not set 'true'
+		if not currentArchive.enableCache then
+			currentArchive.binaryData[filename1]:releaseSelf()
+			currentArchive.binaryData[filename1] = nil
+
+			currentArchive.binaryData[filename2]:releaseSelf()
+			currentArchive.binaryData[filename2] = nil
+		end
+	end
 
 return M

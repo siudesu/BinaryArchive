@@ -9,7 +9,7 @@
  - Allows caching (optional) of fetched data, minimizing disk access.
  - Provides a set of wrapper functions to facilitate the creation of certain Solar2D objects using assets stored in archive, see [DOCS](https://github.com/siudesu/BinaryArchive/blob/main/DOCUMENTATION.md).
  - In compliance with Solar2D's [dynamic image selection](https://docs.coronalabs.com/guide/basics/configSettings/index.html#dynamic-image-selection) when creating [newImageRect](https://docs.coronalabs.com/api/library/display/newImageRect.html) and [newImageSheet](https://docs.coronalabs.com/api/library/graphics/newImageSheet.html) objects.
- - Uses AES-256 for data encryption; *now optional*
+ - Uses AES-256 for data encryption; *now optional by default.*
  - Not limited to appending only files, any data in form of [String](https://docs.coronalabs.com/api/type/String.html) can be easily appended, and retrieved, such as data encoded in [JSON](https://docs.coronalabs.com/api/library/json/index.html).
 
 
@@ -23,31 +23,29 @@
 
 ## Requirements
 - [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) by [Steven Johnson](https://github.com/ggcrunchy), must be added in `build.settings`.
-- [OpenSSL plugin](https://docs.coronalabs.com/plugin/openssl/index.html), must be added in `build.settings`.
+- (Optional) [OpenSSL plugin](https://docs.coronalabs.com/plugin/openssl/index.html), must be added in `build.settings` ONLY if encryption is desired.
 
 ### build.settings (Plugins section)
 ```lua
 	plugins =
 	{
 		["plugin.Bytemap"] = { publisherId = "com.xibalbastudios" },
-		["plugin.openssl"] = { publisherId = "com.coronalabs" },
+		["plugin.openssl"] = { publisherId = "com.coronalabs" }, -- optional
 	}
 ```
 
 </br>
 
 ## Sample Code
-### Creating a new archive:
+### Creating a new archive with default values:
 ```lua
 -- load module
 local binarch = require( "m_binary_archive" )
 
 -- specify full path where assets are located (all files will be appended, includes sub-directories)
-local options = {
-	baseDir = "D:/Projects/Solar2D/AwesomeProject/assets/graphics",
-	key = tostring(37042), -- key for encrypting data
-}
--- create a new archive, output will be at baseDir
+local options = { baseDir = "D:/Projects/Solar2D/AwesomeProject/assets/graphics" }
+
+-- create a new archive, output will be saved at baseDir
 binarch.new(options)
 ```
 ### Loading and using an archive:
@@ -56,10 +54,7 @@ binarch.new(options)
 local binarch = require( "m_binary_archive" )
 
 -- specify file to load, file path is relative to project where main.lua resides
-local options = {
-	file = "assets/data.bin",
-	key = tostring(37042), -- key for decrypting data
-}
+local options = { file = "assets/data.bin" }
 
 -- load binary file
 binarch.load(options)
@@ -134,7 +129,7 @@ These are designed to work in place of Solar2D API functions by the same name:
 
 3. `Are the files secured in the archive?`
 
-   All appended files and data are encrypted using AES-256.
+   All appended files and data can be optionally encrypted using AES-256, please see [DOCS](https://github.com/siudesu/BinaryArchive/blob/main/DOCUMENTATION.md).
 
 4. `What's the purpose of using an archive file?`
 
