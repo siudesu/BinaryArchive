@@ -971,7 +971,7 @@ binarch.imagePaint( rect,  "Fishies/fish.small.red.png" )
 Applies [CompositePaint](https://docs.coronalabs.com/api/type/CompositePaint/index.html) to an object with specified texture files.
 
 ### Syntax:
-- MODULE.imagePaint( object, filename1,  filename2)
+- MODULE.compositePaint( object, filename1,  filename2)
 
 ### Parameters:
 - The `object` to apply fill effect.
