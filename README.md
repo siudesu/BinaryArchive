@@ -102,8 +102,9 @@ These are designed to work in place of Solar2D API functions by the same name:
 ```
 ### Custom:
 ```lua
-	-- used with object.fill
-	MODULE.newImagePaint( filename )
+	-- to apply object.fill effects
+	MODULE.imagePaint( object, filename )
+	MODULE.compositePaint( object, filename1,  filename2 )
 ```
 
 </br>
