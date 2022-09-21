@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.20.0
+--	Last Revision: 2022.09.21.0
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -15,7 +15,7 @@ end
 -- requirements
 local bytemap = require( "plugin.Bytemap" )		-- for image file support
 local lfs = require( "lfs" )					-- for generating fileList
-local openssl = require( "plugin.openssl" )		-- for encryption
+local openssl = nil								-- for encryption; initialized with *.enableSSL()
 
 
 -- localization
@@ -37,8 +37,8 @@ local t_sort = table.sort
 
 
 -- module variables
-local cipher = openssl.get_cipher( "aes-256-cbc" )
-local md5 = openssl.get_digest( "md5" )
+local cipher = nil	-- initialized with *.enableSSL()
+local md5 = nil		-- initialized with *.enableSSL()
 
 local fileHeader = "BA22"	-- file signature, can be changed here or temporarily using M.setFileSignature().
 local debugMode = true
@@ -115,11 +115,11 @@ local M = {}
 			sendToConsole("Opening archive", binFile)
 			binFile:seek("set", currentArchive[file].offset)
 
-		local encryptedData = binFile:read(currentArchive[file].bytes)
-		local binData = cipher:decrypt(encryptedData, currentArchive.key)
-		
-		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = binData, format = "mask" } or
-											bytemap.loadTexture{ from_memory = binData }
+		local binData = binFile:read(currentArchive[file].bytes)
+		local finalData = openssl and cipher:decrypt(binData, currentArchive.key) or binData -- decrypt only if openSSL is enabled.
+ 
+		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = finalData, format = "mask" } or
+											bytemap.loadTexture{ from_memory = finalData }
 
 		sendToConsole("Actual file fetched:", file)
 	end
@@ -180,7 +180,7 @@ local M = {}
 		sendToConsole("Binary archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
 	end
 	
-	local function createEncryptedData(options_)
+	local function createData(options_)
 		local o = options_
 		local header = fileHeader .. delimiter
 		local numFiles = indexCounter .. delimiter
@@ -201,15 +201,15 @@ local M = {}
 		for i=1, #fileList do
 			local path = baseDir .. "/" .. fileList[i]
 				sendToConsole("appending: " .. path)
-			local binFile = io_open( path, "rb" )
-			if not binFile then error("Could not open " .. path) end
+			local binFile, err = io_open( path, "rb" )
+			if not binFile then error("Could not open " .. err) end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
-			local encyrptedData = cipher:encrypt( binData, encryptionKey )
+			local finalData = openssl and cipher:encrypt( binData, encryptionKey ) or binData -- encrypt only if openSSL is enabled.
 
 			file:write(fileList[i] .. delimiter)			-- append file name
-			file:write(s_len(encyrptedData) .. delimiter)   -- append data size in bytes
-			file:write(encyrptedData)                       -- append data
+			file:write(s_len(finalData) .. delimiter)		-- append data size in bytes
+			file:write(finalData)                       	-- append data
 			loadedFilecount = loadedFilecount + 1
 		end
 		io_close(file)
@@ -240,7 +240,7 @@ local M = {}
 		
 		-- if file does not already exists, proceed to create a new one
 		local file = io_open(path, "r")
-			if not file then createEncryptedData(o) return end
+			if not file then createData(o) return end
 			io_close(file)
 			
 		-- else, prompt whether to overwrite it, or cancel
@@ -253,7 +253,7 @@ local M = {}
 						if err then error("Could not overwrite file: " .. err .. "\nIs file in use?") end
 						file:write()
 						io_close(file)
-						createEncryptedData(o)
+						createData(o)
 				end
 			end
 		end
@@ -271,7 +271,7 @@ local M = {}
 			if not fileToload then error("Parameter 'file' must be provided.", -1) end
 		local key = o.key
 			if not key then error("Parameter 'key' must be provided.", -1) end
-		local imageSuffix = ("table" == type(o.imageSuffix)) and o.imageSuffix or nil
+		local imageSuffix = ("table" == type(o.imageSuffix)) and o.imageSuffix or {}
 			if not imageSuffix and d_imageSuffix then error("Parameter 'imageSuffix' must be provided.", -1) end
 
 		local signatureSize = s_len(signature) + delimiterSize
@@ -542,6 +542,13 @@ local M = {}
 			io_close( binFile )
 		return md5chuncks:final() -- this may not be actual function name.
 	end
+
+	function M.enableSSL()
+		openssl = require( "plugin.openssl" )
+		cipher = openssl.get_cipher( "aes-256-cbc" )
+		md5 = openssl.get_digest( "md5" )
+	end
+
 	-- Enable or Disable debugMode mode to assist in troubleshoot process.
 	function M.setDebugMode(bool_)
 		debugMode = type(bool_) == "boolean" and bool_ or false

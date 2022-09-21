@@ -66,7 +66,7 @@ Creates a new binary archive.
 ```lua
 local binarch = require( "m_binary_archive" )
 
-local options = { baseDir = "C:/Projects/AwesomeApp/assets" }
+local options = { baseDir = "C:/Projects/AwesomeApp/assets", key = tostring(37042) }
 
 binarch.new( options )
 ```
@@ -505,7 +505,8 @@ Encrypts and appends data inside specified archive.
 
 > Note: The archive's key will be used to encrypt the data.
 
-## Example
+## Examples
+### Append data to an existing archive
 ```lua
 local binarch = require( "m_binary_archive" )
 local json = require( "json" )
@@ -528,6 +529,28 @@ binarch.appendData("player_score", tostring(data.coins))
 -- append table
 local encodedTable = json.encode(data)
 binarch.appendData("data", encodedTable)
+```
+### Create a new archive for storing only strings of data
+```lua
+local binarch = require( "m_binary_archive" )
+
+local options = {
+		baseDir = system.pathForFile( "", system.TemporaryDirectory ),
+		key = tostring(37042),
+		fileList = {}	-- important, pass empty fileList table
+		output = "temp.bin"
+	}
+
+-- create archive
+binarch.new( options )
+
+
+-- load archive
+binarch.load( {file=system.pathForFile( "temp.bin", system.TemporaryDirectory )}, key=tostring(37042)})
+
+binarch.appendData("time_1", tostring(os.clock()))
+
+print("Time recorded:",binarch.fetch("time_1"))
 ```
 
 </br>
