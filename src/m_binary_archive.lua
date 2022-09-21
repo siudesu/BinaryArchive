@@ -809,7 +809,7 @@ local M = {}
 		-- Returns emitter obj from display library.
 		if not currentArchive then sendToConsole("No current archive set.") ; return end
 
-		local filename = emitterParams_.textureDataFileName
+		local filename = emitterParams_.textureFileName
 
 		-- fetch non-suffixed file data
 		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
@@ -818,7 +818,7 @@ local M = {}
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
 		
 		-- textureFileName needs to point back to file handle created with Bytemap
-		emitterParams_.textureDataFileName = currentArchive.binaryData[filename].filename
+		emitterParams_.textureFileName = currentArchive.binaryData[filename].filename
 
 		-- create emitter
 		local emitter = display.newEmitter( emitterParams_, currentArchive.binaryData[filename].baseDir )
