@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.21.0
+--	Last Revision: 2022.09.21.1
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -124,20 +124,38 @@ local M = {}
 		sendToConsole("Actual file fetched:", file)
 	end
 
-	local function getFileList(baseDir_)
+	local function getFileExtension(string_)
+		-- Returns all chars after last dot in string.
+		local pos = string_:match(".*%.()")
+		return s_sub(string_, pos)
+	end
+
+	local function getFileList(baseDir_, exclude_)
 		-- Grab all filenames at specified baseDir, includes sub-directories.
 		local path = baseDir_
 		local list = {}
-		for filename, attr in dirtree(path) do
-		   if attr.mode == "file" then
-				list[#list+1] = s_gsub(filename, path .. "/", "")
-		   end
+		local exclude = exclude_
+		if not exclude then	-- will add all files without restriction
+			for filename, attr in dirtree(path) do
+			   if attr.mode == "file" then
+					list[#list+1] = s_gsub(filename, path .. "/", "")
+			   end
+			end
+		else -- use exclude table to filter files by file extension
+			for filename, attr in dirtree(path) do
+			   if attr.mode == "file" then
+					local fileExtension = getFileExtension(filename)
+					if not exclude[fileExtension] then -- add file to list if file extension is not in exclude table or value is false
+						list[#list+1] = s_gsub(filename, path .. "/", "")
+					end
+			   end
+			end
 		end
 		return list
 	end
 	
 	local function updateTotalFiles(path_, num_)
-		local file, err = io.open(path_, 'r+b')
+		local file, err = io_open(path_, 'r+b')
 			if not file then error("Error opening archive, " .. err) end
 			file:seek("set", s_len(fileHeader)+1)
 
@@ -233,7 +251,7 @@ local M = {}
 			-- change backslash to forward slash to maintain compatibility
 			o.baseDir = o.baseDir:gsub("\\", "/")
 
-		if not o.fileList then o.fileList = getFileList(o.baseDir) end
+		if not o.fileList then o.fileList = getFileList(o.baseDir, o.exclude) end
 		
 		local outputName = o.output and ("/" .. o.output) or ("/" .. defaultOutputName)
 		local path = o.baseDir .. outputName
@@ -390,8 +408,8 @@ local M = {}
 			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("File fetched:", file)
-		local encryptedData = binFile:read(archive[file].bytes)
-		return cipher:decrypt(encryptedData, archive.key) -- return decrypted data
+		local binData = binFile:read(archive[file].bytes)
+		return openSSL and cipher:decrypt(binData, archive.key) or binData -- return decrypted data if openSSL is enabled, else return data as is
 	end
 
 	-- fetchRaw ; same as fetch() but returns data as-is, no decryption performed
@@ -404,7 +422,7 @@ local M = {}
 			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("File fetched:", file)
-		return binFile:read(archive[file].bytes) -- return encrypted data
+		return binFile:read(archive[file].bytes) -- return data as is
 	end
 
 	-- append Data ; appends a string of data.
@@ -508,11 +526,13 @@ local M = {}
 
 	-- encrypt ; encrypts data and returns results
 	function M.encrypt(string_, key_)
+		if not openSSL then sendToConsole("[BinaryArchiveModule] You must enable openSSL to use encrypt function") return false end
 		return cipher:encrypt( string_, key_)
 	end
 	
 	-- decrypt ; decrypts data and returns results
 	function M.decrypt(string_, key_)
+		if not openSSL then sendToConsole("[BinaryArchiveModule] You must enable openSSL to use decrypt function") return false end
 		return cipher:decrypt( string_, key_)
 	end
 
