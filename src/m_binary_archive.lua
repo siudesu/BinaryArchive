@@ -163,7 +163,7 @@ local M = {}
 	
 	local function updateTotalFiles(path_, num_)
 		local file, err = io_open(path_, 'r+b')
-			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:seek("set", s_len(fileHeader)+1)
 
 			file:write(s_format("%08x", num_))
@@ -179,7 +179,7 @@ local M = {}
 		local outputFile = baseDir .. "\n"
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
@@ -191,7 +191,7 @@ local M = {}
 			local path = baseDir .. "/" .. fileList[i]
 				sendToConsole("[BinaryArchiveModule] appending: " .. path)
 			local binFile, err = io_open( path, "rb" )
-				if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+				if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*a" )
 			io_close( binFile )
 			file:write(fileList[i] .. delimiter)		-- append file name
@@ -215,7 +215,7 @@ local M = {}
 		local encryptionKey = o.key
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
@@ -227,7 +227,7 @@ local M = {}
 			local path = baseDir .. "/" .. fileList[i]
 				sendToConsole("[BinaryArchiveModule] appending: " .. path)
 			local binFile, err = io_open( path, "rb" )
-				if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+				if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 			local finalData = openssl and cipher:encrypt( binData, encryptionKey ) or binData -- encrypt only if openssl is enabled.
@@ -252,9 +252,9 @@ local M = {}
 	-- new ; creates new binary archive
 	function M.new(options_)
 		local o = options_
-			if not o or type(o) ~= "table" then sendToConsole("[BinaryArchiveModule] Missing parameters table.") ; printDebug() return false end
-			if not o.baseDir then sendToConsole("[BinaryArchiveModule] Parameter 'baseDir' must be provided.") ; printDebug() return false end
-			if not o.key and openssl then sendToConsole("[BinaryArchiveModule] Parameter 'key' must be provided.") ; printDebug() return false end
+			if not o or type(o) ~= "table" then sendToConsole("Error: [BinaryArchiveModule] Missing parameters table.") ; printDebug() return false end
+			if not o.baseDir then sendToConsole("Error: [BinaryArchiveModule] Parameter 'baseDir' must be provided.") ; printDebug() return false end
+			if not o.key and openssl then sendToConsole("Error: [BinaryArchiveModule] Encryption is enabled but no 'key' parameter was provided.") ; printDebug() return false end
 			-- change backslash to forward slash to maintain compatibility
 			o.baseDir = o.baseDir:gsub("\\", "/")
 
@@ -275,7 +275,7 @@ local M = {}
 				if ( i == 1 ) then
 					-- overwrite file with no values ; could use lfs, but this might be simpler
 					local file, err = io_open(path, "w+")
-						if err then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+						if err then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 						file:write()
 						io_close(file)
 						createData(o)
@@ -290,14 +290,14 @@ local M = {}
 	function M.load(options_, overWritePath)
 		-- Creates and returns a binaryArchiveData table.
 		local o = options_
-			if not o then sendToConsole("[BinaryArchiveModule] Required parameters not found."); printDebug() return false end
+			if not o then sendToConsole("Error: [BinaryArchiveModule] Required parameters not found."); printDebug() return false end
 		local signature = o.signature and o.signature or fileHeader
 		local fileToload = o.file
-			if not fileToload then sendToConsole("[BinaryArchiveModule] Parameter 'file' must be provided."); printDebug() return false end
+			if not fileToload then sendToConsole("Error: [BinaryArchiveModule] Parameter 'file' must be provided."); printDebug() return false end
 		local key = o.key
-			if not key and openssl then sendToConsole("[BinaryArchiveModule] Parameter 'key' must be provided."); printDebug() return false end
+			if not key and openssl then sendToConsole("Error: [BinaryArchiveModule] Encryption is enabled but no 'key' parameter was provided."); printDebug() return false end
 		local imageSuffix = ("table" == type(o.imageSuffix)) and o.imageSuffix or {}
-			if not imageSuffix and d_imageSuffix then sendToConsole("[BinaryArchiveModule] Parameter 'imageSuffix' must be provided."); printDebug() return false end
+			if not imageSuffix and d_imageSuffix then sendToConsole("Error: [BinaryArchiveModule] Parameter 'imageSuffix' must be provided."); printDebug() return false end
 
 		local signatureSize = s_len(signature) + delimiterSize
 		local binaryArchiveData = {}	-- keep list of files cached.
@@ -309,15 +309,15 @@ local M = {}
 
 		-- open binary archive file from app's directory.
 		local path = overWritePath and fileToload or system.pathForFile( fileToload, system.ResourceDirectory)
-			if not path then sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(fileToload)); printDebug() return false end
+			if not path then sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(fileToload)); printDebug() return false end
 		local binFile, err = io_open( path, "rb" )	-- read in binary mode.
-			if not binFile then sendToConsole("[BinaryArchiveModule] " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] " .. err) ; printDebug() return false end
 
 		binaryArchiveData.path = path -- cache file path for future use in case of multiple bin files.
 
 		-- check signature
 		if binFile:read("*l") ~= signature then
-			if not binFile then sendToConsole("[BinaryArchiveModule] File signature mismatch on " .. fileToload) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] File signature mismatch on " .. fileToload) ; printDebug() return false end
 		end
 
 		-- get number of stored files as specified
@@ -361,7 +361,7 @@ local M = {}
 	
 	-- set Current Archive
 	function M.setCurrentArchive(binaryArchiveData_)
-		if not binaryArchiveData_ then sendToConsole("[BinaryArchiveModule] No valid data found.") ; printDebug() return false end
+		if not binaryArchiveData_ then sendToConsole("Error: [BinaryArchiveModule] No valid data found.") ; printDebug() return false end
 		currentArchive = binaryArchiveData_
 	end
 
@@ -398,7 +398,7 @@ local M = {}
 		if not string_ or 
 			type(string_) ~= "string" or
 			string_ == "" then 
-			sendToConsole("[BinaryArchiveModule] File Signature must be a valid string.") ; printDebug() return false end
+			sendToConsole("Error: [BinaryArchiveModule] File Signature must be a valid string.") ; printDebug() return false end
 		fileHeader = string_
 	end
 
@@ -412,9 +412,9 @@ local M = {}
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
-			if not archive[file] then io_close(binFile); sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
+			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("[BinaryArchiveModule] File fetched:", file)
 		local binData = binFile:read(archive[file].bytes)
@@ -426,9 +426,9 @@ local M = {}
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
-			if not archive[file] then io_close(binFile); sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
+			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("[BinaryArchiveModule] File fetched:", file)
 		return binFile:read(archive[file].bytes) -- return data as is
@@ -437,10 +437,10 @@ local M = {}
 	-- append Data ; appends a string of data.
 	function M.appendData(name_, data_, binaryArchiveData_)
 		local archive = binaryArchiveData_ or currentArchive
-		if archive[name_] then sendToConsole("[BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
+		if archive[name_] then sendToConsole("Error: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
 		local finalData = openssl and cipher:encrypt( data_, archive.key ) or data_
 		local file, err = io_open(archive.path, 'ab')
-			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", file)
 
 			file:write(name_ .. delimiter)				-- append file name
@@ -456,18 +456,18 @@ local M = {}
 	function M.appendFile(name_, filepath_, binaryArchiveData_)
 		-- filepath_ should be the string generated by using system.pathForFile(filename, system.DocumentsDirectory or system.ResourceDirectory)
 		local archive = binaryArchiveData_ or currentArchive
-		if archive[name_] then sendToConsole("[BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
+		if archive[name_] then sendToConsole("Error: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
 		
 		-- get file data from disk
 		local binFile, err = io_open( filepath_, "rb" )
-			if not binFile then sendToConsole("[BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 
 		local encyrptedData = openssl and cipher:encrypt( binData, archive.key ) or binData
 
 		local file, err = io_open(archive.path, 'ab')
-			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", file)
 			
 			file:write(name_ .. delimiter)					-- append file name
@@ -487,11 +487,11 @@ local M = {}
 
 		-- open binary archive file from app's directory.
 		local binFile = io_open( archive.path, "rb" )	-- read in binary mode.
-			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 
 		-- check signature
 		if binFile:read("*l") ~= archive.signature then
-			sendToConsole("[BinaryArchiveModule] File signature mismatch on " .. archive.path) ; printDebug() return false
+			sendToConsole("Error: [BinaryArchiveModule] File signature mismatch on " .. archive.path) ; printDebug() return false
 		end
 
 		-- get number of stored files as specified
@@ -534,13 +534,13 @@ local M = {}
 
 	-- encrypt ; encrypts data and returns results
 	function M.encrypt(string_, key_)
-		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use encrypt function") ; printDebug() return false end
+		if not openssl then sendToConsole("Error: [BinaryArchiveModule] You must enable openssl to use encrypt.") ; printDebug() return false end
 		return cipher:encrypt( string_, key_)
 	end
 	
 	-- decrypt ; decrypts data and returns results
 	function M.decrypt(string_, key_)
-		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use decrypt function") ; printDebug() return false end
+		if not openssl then sendToConsole("Error: [BinaryArchiveModule] You must enable openssl to use decrypt.") ; printDebug() return false end
 		return cipher:decrypt( string_, key_)
 	end
 
@@ -558,9 +558,9 @@ local M = {}
 		local file = file_
 		-- get file data from disk
 		local path = system.pathForFile( file, system.ResourceDirectory)
-			if not path then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
+			if not path then sendToConsole("Error: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 		local binFile, err = io_open( path, "rb" )
-			if not binFile then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 			
 			local md5chuncks = md5.new()	-- function does not exist, not sure it's been exposed or proper binding name.
 			-- chunck up data line by line
