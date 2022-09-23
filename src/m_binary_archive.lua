@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.21.2
+--	Last Revision: 2022.09.23.0
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -20,7 +20,6 @@ local openssl = nil								-- for encryption; initialized with M.enableSSL()
 
 -- localization
 local assert = assert
-local error = error
 local pairs = pairs
 local print = print
 local tonumber = tonumber
@@ -54,6 +53,13 @@ local defaultOutputName = "data.bin"
 
 -- module
 local M = {}
+
+	local function printDebug()
+		if not debugMode then return end
+		local info = debug.getinfo(3)
+		local file, line, funcName = s_gsub(info.source, "=",""), info.currentline, debug.getinfo(2, "n").name
+		print("[BinaryArchiveModule] Trace:\n\tFile: " .. file .. "\n\tLine: " .. line .. ", Function: " .. funcName)
+	end
 
 	local function sendToConsole(...)
 		if not debugMode then return end
@@ -105,7 +111,7 @@ local M = {}
 			sendToConsole("Warning: [BinaryArchiveModule] No more data found. Is 'totalFiles' correct for " .. tostring(path_) .. "?")
 			return false
 		end
-		sendToConsole("Found data: " .. filename .. ", bytes: " .. bytes)
+		sendToConsole("[BinaryArchiveModule] Found data: " .. filename .. ", bytes: " .. bytes)
 		return filename, bytes
 	end
 
@@ -113,7 +119,7 @@ local M = {}
 		local file = name_
 		
 		local binFile = io_open( currentArchive.path, "rb" )
-			sendToConsole("Opening archive", binFile)
+			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
 			binFile:seek("set", currentArchive[file].offset)
 
 		local binData = binFile:read(currentArchive[file].bytes)
@@ -122,7 +128,7 @@ local M = {}
 		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = finalData, format = "mask" } or
 											bytemap.loadTexture{ from_memory = finalData }
 
-		sendToConsole("Actual file fetched:", file)
+		sendToConsole("[BinaryArchiveModule] Actual file fetched:", file)
 	end
 
 	local function getFileExtension(string_)
@@ -157,7 +163,7 @@ local M = {}
 	
 	local function updateTotalFiles(path_, num_)
 		local file, err = io_open(path_, 'r+b')
-			if not file then error("Could not open " .. err) end
+			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:seek("set", s_len(fileHeader)+1)
 
 			file:write(s_format("%08x", num_))
@@ -173,19 +179,19 @@ local M = {}
 		local outputFile = baseDir .. "\n"
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then error("Could not open : " .. err) end
+			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
-		sendToConsole("Creating binary archive ...")
+		sendToConsole("[BinaryArchiveModule] Creating binary archive ...")
 		-- load binary data
 		local fileList = o.fileList
 		local loadedFilecount = 0
 		for i=1, #fileList do
 			local path = baseDir .. "/" .. fileList[i]
-				sendToConsole("appending: " .. path)
+				sendToConsole("[BinaryArchiveModule] appending: " .. path)
 			local binFile, err = io_open( path, "rb" )
-				if not binFile then error("Could not open " .. err) end
+				if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*a" )
 			io_close( binFile )
 			file:write(fileList[i] .. delimiter)		-- append file name
@@ -196,7 +202,7 @@ local M = {}
 		io_close(file)
 		
 		updateTotalFiles(outputFile, loadedFilecount)
-		sendToConsole("Binary archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
+		sendToConsole("[BinaryArchiveModule] Archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
 	end
 	
 	local function createData(options_)
@@ -209,19 +215,19 @@ local M = {}
 		local encryptionKey = o.key
 
 		local file, err = io_open(outputFile, 'ab')
-			if not file then error("Could not open " .. err) end
+			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			file:write(header)		-- write file header
 			file:write(numFiles)
 
-		sendToConsole("Creating binary archive ...")
+		sendToConsole("[BinaryArchiveModule] Creating binary archive ...")
 		-- load binary data
 		local fileList = o.fileList
 		local loadedFilecount = 0
 		for i=1, #fileList do
 			local path = baseDir .. "/" .. fileList[i]
-				sendToConsole("appending: " .. path)
+				sendToConsole("[BinaryArchiveModule] appending: " .. path)
 			local binFile, err = io_open( path, "rb" )
-				if not binFile then error("Could not open " .. err) end
+				if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 			local finalData = openssl and cipher:encrypt( binData, encryptionKey ) or binData -- encrypt only if openssl is enabled.
@@ -234,7 +240,7 @@ local M = {}
 		io_close(file)
 
 		updateTotalFiles(outputFile, #fileList)
-		sendToConsole("Binary archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
+		sendToConsole("[BinaryArchiveModule] Archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
 	end
 
 	----------------------------------------------------
@@ -246,9 +252,9 @@ local M = {}
 	-- new ; creates new binary archive
 	function M.new(options_)
 		local o = options_
-			if not o or type(o) ~= "table" then error("Missing parameters table.", -1) end
-			if not o.baseDir then error("Parameter 'baseDir' must be provided.", -1) end
-			if not o.key and openssl then error("Parameter 'key' must be provided.", -1) end
+			if not o or type(o) ~= "table" then sendToConsole("[BinaryArchiveModule] Missing parameters table.") ; printDebug() return false end
+			if not o.baseDir then sendToConsole("[BinaryArchiveModule] Parameter 'baseDir' must be provided.") ; printDebug() return false end
+			if not o.key and openssl then sendToConsole("[BinaryArchiveModule] Parameter 'key' must be provided.") ; printDebug() return false end
 			-- change backslash to forward slash to maintain compatibility
 			o.baseDir = o.baseDir:gsub("\\", "/")
 
@@ -269,7 +275,7 @@ local M = {}
 				if ( i == 1 ) then
 					-- overwrite file with no values ; could use lfs, but this might be simpler
 					local file, err = io_open(path, "w+")
-						if err then error("Could not open " .. err) end
+						if err then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 						file:write()
 						io_close(file)
 						createData(o)
@@ -284,14 +290,14 @@ local M = {}
 	function M.load(options_, overWritePath)
 		-- Creates and returns a binaryArchiveData table.
 		local o = options_
-			if not o then error("Error loading file, no parameters found.", -1) end
+			if not o then sendToConsole("[BinaryArchiveModule] Required parameters not found."); printDebug() return false end
 		local signature = o.signature and o.signature or fileHeader
 		local fileToload = o.file
-			if not fileToload then error("Parameter 'file' must be provided.", -1) end
+			if not fileToload then sendToConsole("[BinaryArchiveModule] Parameter 'file' must be provided."); printDebug() return false end
 		local key = o.key
-			if not key and openssl then error("Parameter 'key' must be provided.", -1) end
+			if not key and openssl then sendToConsole("[BinaryArchiveModule] Parameter 'key' must be provided."); printDebug() return false end
 		local imageSuffix = ("table" == type(o.imageSuffix)) and o.imageSuffix or {}
-			if not imageSuffix and d_imageSuffix then error("Parameter 'imageSuffix' must be provided.", -1) end
+			if not imageSuffix and d_imageSuffix then sendToConsole("[BinaryArchiveModule] Parameter 'imageSuffix' must be provided."); printDebug() return false end
 
 		local signatureSize = s_len(signature) + delimiterSize
 		local binaryArchiveData = {}	-- keep list of files cached.
@@ -303,21 +309,21 @@ local M = {}
 
 		-- open binary archive file from app's directory.
 		local path = overWritePath and fileToload or system.pathForFile( fileToload, system.ResourceDirectory)
-			if not path then error("File not found: " .. tostring(fileToload), -1) end
+			if not path then sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(fileToload)); printDebug() return false end
 		local binFile, err = io_open( path, "rb" )	-- read in binary mode.
-			if not binFile then error("Could not open " .. err) end
+			if not binFile then sendToConsole("[BinaryArchiveModule] " .. err) ; printDebug() return false end
 
 		binaryArchiveData.path = path -- cache file path for future use in case of multiple bin files.
 
 		-- check signature
 		if binFile:read("*l") ~= signature then
-			error("File signature mismatch on " .. fileToload)
+			if not binFile then sendToConsole("[BinaryArchiveModule] File signature mismatch on " .. fileToload) ; printDebug() return false end
 		end
 
 		-- get number of stored files as specified
 		local totalFiles = tonumber(binFile:read("*l"), 16)	-- convert from hex to decimal
 		binaryArchiveData.totalFiles = totalFiles
-		sendToConsole("Binary archive has a total of " .. totalFiles .. " files.")
+		sendToConsole("[BinaryArchiveModule] Archive has a total of " .. totalFiles .. " files.")
 
 		-- fetch first file data
 		local filename, bytes = getFileInfo(binFile, path)
@@ -355,7 +361,7 @@ local M = {}
 	
 	-- set Current Archive
 	function M.setCurrentArchive(binaryArchiveData_)
-		if not binaryArchiveData_ then error("No valid data found", -2) end
+		if not binaryArchiveData_ then sendToConsole("[BinaryArchiveModule] No valid data found.") ; printDebug() return false end
 		currentArchive = binaryArchiveData_
 	end
 
@@ -369,7 +375,7 @@ local M = {}
 				archive.binaryData[k]:releaseSelf()
 			end
 			archive.binaryData[k] = nil	-- nil out references
-			sendToConsole("Clearing cache:", k, v, archive.binaryData[k])
+			sendToConsole("[BinaryArchiveModule] Clearing cache:", k, v, archive.binaryData[k])
 		end
 	end
 
@@ -392,7 +398,7 @@ local M = {}
 		if not string_ or 
 			type(string_) ~= "string" or
 			string_ == "" then 
-			error("File Signature must be a valid string.") end
+			sendToConsole("[BinaryArchiveModule] File Signature must be a valid string.") ; printDebug() return false end
 		fileHeader = string_
 	end
 
@@ -406,11 +412,11 @@ local M = {}
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then error("Could not open " .. err) end
-			sendToConsole("Opening archive", binFile)
-			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
+			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
+			if not archive[file] then io_close(binFile); sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
-			sendToConsole("File fetched:", file)
+			sendToConsole("[BinaryArchiveModule] File fetched:", file)
 		local binData = binFile:read(archive[file].bytes)
 		return openssl and cipher:decrypt(binData, archive.key) or binData -- return decrypted data if openssl is enabled, else return data as is
 	end
@@ -420,28 +426,28 @@ local M = {}
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
 		local binFile, err = io_open( archive.path, "rb" )
-			if not binFile then error("Could not open " .. err) end
-			sendToConsole("Opening archive", binFile)
-			if not archive[file] then io_close(binFile); sendToConsole("Warning: [BinaryArchiveModule] File not found: " .. tostring(name_)) return false end
+			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
+			if not archive[file] then io_close(binFile); sendToConsole("[BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
-			sendToConsole("File fetched:", file)
+			sendToConsole("[BinaryArchiveModule] File fetched:", file)
 		return binFile:read(archive[file].bytes) -- return data as is
 	end
 
 	-- append Data ; appends a string of data.
 	function M.appendData(name_, data_, binaryArchiveData_)
 		local archive = binaryArchiveData_ or currentArchive
-		if archive[name_] then sendToConsole("Warning: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) return false end
+		if archive[name_] then sendToConsole("[BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
 		local finalData = openssl and cipher:encrypt( data_, archive.key ) or data_
 		local file, err = io_open(archive.path, 'ab')
-			if not file then error("Could not open " .. err) end
-			sendToConsole("Opening archive", file)
+			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", file)
 
 			file:write(name_ .. delimiter)				-- append file name
 			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
 			file:write(finalData)						-- append data
 			io_close(file)
-			sendToConsole("Added data:", name_)
+			sendToConsole("[BinaryArchiveModule] Added data:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
 		return true
 	end
@@ -450,25 +456,25 @@ local M = {}
 	function M.appendFile(name_, filepath_, binaryArchiveData_)
 		-- filepath_ should be the string generated by using system.pathForFile(filename, system.DocumentsDirectory or system.ResourceDirectory)
 		local archive = binaryArchiveData_ or currentArchive
-		if archive[name_] then sendToConsole("Warning: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) return false end
+		if archive[name_] then sendToConsole("[BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
 		
 		-- get file data from disk
 		local binFile, err = io_open( filepath_, "rb" )
-			if not binFile then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) return false end
+			if not binFile then sendToConsole("[BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 
 		local encyrptedData = openssl and cipher:encrypt( binData, archive.key ) or binData
 
 		local file, err = io_open(archive.path, 'ab')
-			if not file then error("Could not open " .. err) end
-			sendToConsole("Opening archive", file)
+			if not file then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", file)
 			
 			file:write(name_ .. delimiter)					-- append file name
 			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
 			file:write(finalData)						-- append data
 			io_close(file)
-			sendToConsole("Added file:", name_)
+			sendToConsole("[BinaryArchiveModule] Added file:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
 		return true
 	end
@@ -481,11 +487,11 @@ local M = {}
 
 		-- open binary archive file from app's directory.
 		local binFile = io_open( archive.path, "rb" )	-- read in binary mode.
-			if not binFile then error("Could not open " .. err) end
+			if not binFile then sendToConsole("[BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 
 		-- check signature
 		if binFile:read("*l") ~= archive.signature then
-			error("File signature mismatch on " .. archive.path)
+			sendToConsole("[BinaryArchiveModule] File signature mismatch on " .. archive.path) ; printDebug() return false
 		end
 
 		-- get number of stored files as specified
@@ -528,13 +534,13 @@ local M = {}
 
 	-- encrypt ; encrypts data and returns results
 	function M.encrypt(string_, key_)
-		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use encrypt function") return false end
+		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use encrypt function") ; printDebug() return false end
 		return cipher:encrypt( string_, key_)
 	end
 	
 	-- decrypt ; decrypts data and returns results
 	function M.decrypt(string_, key_)
-		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use decrypt function") return false end
+		if not openssl then sendToConsole("[BinaryArchiveModule] You must enable openssl to use decrypt function") ; printDebug() return false end
 		return cipher:decrypt( string_, key_)
 	end
 
@@ -552,9 +558,9 @@ local M = {}
 		local file = file_
 		-- get file data from disk
 		local path = system.pathForFile( file, system.ResourceDirectory)
-			if not path then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) return false end
+			if not path then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 		local binFile, err = io_open( path, "rb" )
-			if not binFile then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) return false end
+			if not binFile then sendToConsole("Warning: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 			
 			local md5chuncks = md5.new()	-- function does not exist, not sure it's been exposed or proper binding name.
 			-- chunck up data line by line
@@ -574,6 +580,7 @@ local M = {}
 
 	-- release texture ; provides a way to individually remove a texture, as oppose to graphics.releaseTextures( { type="image" } ) which removes ALL textures
 	function M.releaseTexture(filename_)
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 		if currentArchive.binaryData[filename_] then
 			currentArchive.binaryData[filename_]:releaseSelf()
 			currentArchive.binaryData[filename_] = nil
@@ -591,7 +598,7 @@ local M = {}
 	----
 	----------------------------------------------------
 	function M.newImage(...)
-		if not currentArchive then error("Archive not loaded.", -2) end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 		local group, filename, x, y
 		-- newImage's API can take up to 4 arguments (group, file, x, y)
 		if type(arg[1]) == "table" then -- assume a group was passed
@@ -607,7 +614,7 @@ local M = {}
 		end
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
@@ -625,7 +632,7 @@ local M = {}
 	end
 
 	function M.newImageRect(...)
-		if not currentArchive then error("Archive not yet loaded.", -2) end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 		local group, filename, w, h
 		-- newImageRect's API can take up to 6 arguments (group, file, x, y)
 		if type(arg[1]) == "table" then -- assume a group was passed
@@ -683,7 +690,7 @@ local M = {}
 		end
 
 		-- fetch non-suffixed file data
-		if not currentArchive[actualFile] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[actualFile] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[actualFile] then loadTexture(actualFile) end
@@ -702,7 +709,7 @@ local M = {}
 
 	function M.newImageSheet(filename_, options_)
 		-- Returns a newImageSheet from graphics library.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 		local filename = filename_
 		local suffixedFilename = d_imageSuffix and insertImageSuffix(filename, d_imageSuffix)
 
@@ -746,7 +753,7 @@ local M = {}
 		end
 		
 		-- fetch non-suffixed file data
-		if not currentArchive[actualFile] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[actualFile] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[actualFile] then loadTexture(actualFile) end
@@ -768,12 +775,12 @@ local M = {}
 		-- Textures are cached in order to imitate graphics.newTexture, 
 		-- however, graphics.releaseTextures( { type="image" } ) has no effect
 		-- and should be removed with M.releaseTexture()
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = filename_
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
@@ -784,12 +791,12 @@ local M = {}
 	
 	function M.newMask(filename_)
 		-- Returns a newMask from graphics library.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = filename_
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename, true) end
@@ -808,12 +815,12 @@ local M = {}
 
 	function M.newOutline(coarsenessInTexels_, filename_)
 		-- Returns image outline from graphics library.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = filename_
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
@@ -832,12 +839,12 @@ local M = {}
 
 	function M.newEmitter(emitterParams_)
 		-- Returns emitter obj from display library.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = emitterParams_.textureFileName
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
@@ -864,12 +871,12 @@ local M = {}
 	----------------------------------------------------
 	function M.imagePaint(obj_, filename_)
 		-- Applies fill effect on obj, the approach below is necessary to apply the fill right away and avoid textures being released prematurely.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = filename_
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename] then error("File '" .. filename .. "' not found.", -2) end
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename] then loadTexture(filename) end
@@ -885,14 +892,14 @@ local M = {}
 
 	function M.compositePaint(obj_, file1_, file2_)
 		-- Applies composite fill effect on obj, the approach below is necessary to apply the fill right away and avoid textures being released prematurely.
-		if not currentArchive then sendToConsole("No current archive set.") ; return end
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename1 = file1_
 		local filename2 = file2_
 
 		-- fetch non-suffixed file data
-		if not currentArchive[filename1] then error("File '" .. filename1 .. "' not found.", -2) end
-		if not currentArchive[filename2] then error("File '" .. filename2 .. "' not found.", -2) end
+		if not currentArchive[filename1] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename1 .. "' not found.") ; printDebug() return false end
+		if not currentArchive[filename2] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename2 .. "' not found.") ; printDebug() return false end
 
 		-- load texture if not previously loaded, or removed.
 		if not currentArchive.binaryData[filename1] then loadTexture(filename1) end
