@@ -10,7 +10,6 @@ display.setStatusBar( display.HiddenStatusBar )
 -- load binary archive
 binarch = require "m_binary_archive"
 binarch.load({
-	signature = "BA22",
 	file="data.bin",
 	imageSuffix =
 		{
