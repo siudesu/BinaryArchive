@@ -19,23 +19,23 @@
  - While the purpose of using this type of archive is, in part, loading assets without disk extraction, in this fashion it is currently limited to `png`, `jpg`, and `jpeg` files.
  </br>Any file can be appended, but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
 
- - Appended file, or data, size should be < 200 MB without encryption. (Limitation on Lua IO read(), currently processed in a single pass.)
- - Appended file, or data, size should be < 100 MB with encryption enabled (Limitation on ciphering without using chunks.)
+ - Appended file (or data) size should be <span style="color:red">< 200 MB</span> without encryption. (Limitation on Lua IO read(), currently processed in a single pass.)
+ - Appended file (or data) size should be <span style="color:red">< 100 MB</span> with encryption enabled (Limitation on ciphering without using chunks.)
 
 </br>
 
 ## Benchmark Numbers:
 Tests performed on a PC with HDD (not SSD), 1.6 GB archive with 18,383 files, measured in seconds:
 - Creating the archive:
-	- 28s with debug info enabled
-	- 22s without debug
+	- `28s` with debug info enabled
+	- `22s` without debug
 - Loading the archive:
-	- 3.0s with debug info enabled
-	- 0.2s without debug
+	- `3.0s` with debug info enabled
+	- `0.2s` without debug
 - Creating 50 objects using 2 image files:
-	- 0.012s loading directly from disk (not using archive)
-	- 0.075s loading from archive without cache enabled
-	- 0.002s loading from archive with cache enabled
+	- `0.012s` loading directly from disk (not using archive)
+	- `0.075s` loading from archive without cache enabled
+	- `0.002s` loading from archive with cache enabled
 
 ## Requirements
 - [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) by [Steven Johnson](https://github.com/ggcrunchy), must be added in `build.settings`.

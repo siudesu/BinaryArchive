@@ -705,7 +705,7 @@ local data = binarch.fetch("data.txt")
 </br>
 
 # *.encrypt
-Encrypts any value passed as a string, returns encrypted string. 
+Encrypts any input data, returns encrypted string. 
 
 ### Syntax:
 - MODULE.encrypt( data, key )
@@ -736,7 +736,7 @@ local encryptedToken = binarch.encrypt(secretData, "key123abc")
 </br>
 
 # *.decrypt
-Decrypts any value passed as a string, returns decrypted string. 
+Decrypts encrypted input data, returns decrypted string. 
 
 ### Syntax:
 - MODULE.refresh( data, key )
@@ -783,7 +783,7 @@ Queue up the release of a texture that was created with [*.newTexture](#newTextu
 - data (required)
 	- [String](https://docs.coronalabs.com/api/type/String.html). The same name of file that was used to create the texture.
 
-> Note: Releasing textures does not effect existing objects. If the texture is not in use it will be removed immediately, otherwise it'll be removed when it's no longer in use.
+> Note: Releasing textures does not affect existing objects. If the texture is not in use it will be removed immediately, otherwise it'll be removed when it's no longer in use.
 ## Example
 ```lua
 -- load module
