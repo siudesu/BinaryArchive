@@ -1,5 +1,5 @@
 # Binary Archive Module
-### A [Solar2D](https://solar2d.com) Lua module for reading and writing binary archive files for storing resources. Originally meant for creating bundles of images, now works as an all purpose archive module.
+### A [Solar2D](https://solar2d.com) Lua module for reading and writing binary archive files for storing resources.
 
 
 </br>
@@ -10,14 +10,14 @@
  - Provides a set of wrapper functions to facilitate the creation of certain Solar2D objects using assets stored in archive, see [DOCS](https://github.com/siudesu/BinaryArchive/blob/main/DOCUMENTATION.md).
  - In compliance with Solar2D's [dynamic image selection](https://docs.coronalabs.com/guide/basics/configSettings/index.html#dynamic-image-selection) when creating [newImageRect](https://docs.coronalabs.com/api/library/display/newImageRect.html) and [newImageSheet](https://docs.coronalabs.com/api/library/graphics/newImageSheet.html) objects.
  - Uses AES-256 for data encryption; *now optional by default.*
- - Not limited to appending only files, any data in form of [String](https://docs.coronalabs.com/api/type/String.html) can be easily appended, and retrieved, such as data encoded in [JSON](https://docs.coronalabs.com/api/library/json/index.html).
+ - Not limited to files, any data in form of [String](https://docs.coronalabs.com/api/type/String.html) can be easily appended, and retrieved, such as data encoded in [JSON](https://docs.coronalabs.com/api/library/json/index.html).
 
 
 </br>
 
 ## Limitations
- - While the purpose of using an archive is, in part, using assets without disk extraction, it is currently limited to `png`, `jpg`, and `jpeg`.
- </br>Any other file can still be appended but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
+ - While the purpose of using this type of archive is, in part, loading assets without disk extraction, in this fashion it is currently limited to `png`, `jpg`, and `jpeg` files.
+ </br>Any file can be appended, but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
 
 </br>
 
@@ -62,11 +62,9 @@ binarch.load(options)
 -- create newImageRect using wrapper function; parameters are the same as display.newImageRect()
 local balloon = binarch.newImageRect( "SnapshotEraser/balloon.jpg", 200, 240 )
 
-
 -- create new rectangle and apply object fill using custom function
 local rect = display.newRect( 150, 150, 50, 50 )
-	rect.fill = binarch.newImagePaint( "Fishies/fish.small.red.png" )
-
+	binarch.imagePaint( rect, "Fishies/fish.small.red.png" )
 
 -- create a mask object and apply it to newImageRect
 local mask = binarch.newMask( "SnapshotEraser/mask.png" )
@@ -74,7 +72,6 @@ local bg = binarch.newImageRect( "FilterGraph/image.jpg", 480, 320 )
 	bg:setMask( mask )
 	bg.x = 240
 	bg.y = 160
-
 ```
 
 </br>
@@ -98,7 +95,7 @@ These are designed to work in place of Solar2D API functions by the same name:
 	MODULE.newImageSheet( filename, options )
 	MODULE.newMask( filename )
 	MODULE.newOutline( coarsenessInTexels, imageFileName )
-	MODULE.newTexture( params ) -- for "image" type only, not "canvas" type
+	MODULE.newTexture( params ) -- this returns a Bytemap texture which is used in the same manner as graphics.newTexure()
 ```
 ### Custom:
 ```lua
@@ -119,39 +116,43 @@ These are designed to work in place of Solar2D API functions by the same name:
 </br>
 
 ## FAQ
-1. `How are binary archives created?`
+1. `What's the purpose of using an archive file?`
+
+   1. Hide project assets from plain sight.
+   2. Implement a method of using bundled assets without extracting them to disk, such as a zip file. This has other implications, see below `FAQ #7`.
+
+2. `How are archives created?`
 
    Archives are created using Lua libraries (LFS and I/O) to read and append files into a single binary file. 
    </br>Additional information is added to help fetch files quickly.
 
-2. `How many files can be stored in an archive?`
+3. `How many files can be stored in an archive?`
 
-   An arbitrary number of 4,294,967,295.... that's probably more than enough. :smile:
+   An arbitrary number of 4,294,967,295 .... that's probably more than enough. :smile:
 
-3. `Are the files secured in the archive?`
+4. `Is there any overhead in disk space?`
+
+	Not much testing done there, but in one instance, appending 137 MB worth of data resulted in a 137 MB archive.
+	
+5. `Are the files secured in the archive?`
 
    All appended files and data can be optionally encrypted using AES-256, please see [DOCS](https://github.com/siudesu/BinaryArchive/blob/main/DOCUMENTATION.md).
 
-4. `What's the purpose of using an archive file?`
+6. `What files can I store in an archive?`
 
-   1. Hide project assets from plain sight.
-   2. Implement a method of using bundled assets without extracting them to disk, such as a zip file. This has other implications, see below `FAQ #6`.
+   You can append any type of file from disk, and any data in form of a [String](https://docs.coronalabs.com/api/type/String.html), but usage may vary, see below `FAQ #7`.
 
-5. `What files can I store in an archive?`
-
-   You can append any type of file from disk, and any data in form of a [String](https://docs.coronalabs.com/api/type/String.html), but usage may vary, see below `FAQ #6`.
-
-6. `What are the implications of using an archive for assets?`
+7. `What are the implications of using an archive for assets?`
    
    The implication is that Solar2D API loads asset from disk, in particular [these four directories](https://docs.coronalabs.com/guide/data/readWriteFiles/index.html#system-directories).
    </br>The loading of textures is currently supported by [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) providing the ability to create external textures from Memory, these are not extracted anywhere on disk.
    </br>For any other file types, you may need to extract them to [any of the write-access directories](https://docs.coronalabs.com/guide/data/readWriteFiles/index.html#system-directories) before using them.
 
-7. `Is there future plans for using other files in an archive without extracting them to disk?`
+8. `Is there future plans for using other files in an archive without extracting them to disk?`
 
    I think fonts and audio files are desirable to load from an archive, this would allow for most common applications to have assets fully bundled.
    </br>However, a technical implementation in the engine, or by way of a plugin, is first required, and both are out of my scope-- I'm just doing the easy "packaging" part. :slightly_smiling_face:
-   </br>It's worth noting that, for audio files, they will soon be usable from an archive; the same [creator](https://github.com/ggcrunchy) of the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which also allows loading audio files from Memory.
+   </br>It's worth noting that audio files will soon be usable from an archive; the same [creator](https://github.com/ggcrunchy) of the [Bytemap plugin](https://github.com/solar2d/com.xibalbastudios-plugin.Bytemap) has a [WIP project](https://discord.com/channels/721785436195782677/721785737258860544/1013963898589823056) which also allows loading audio files from Memory.
 
 </br>
 
