@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.23.0
+--	Last Revision: 2022.09.24.0
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -7,7 +7,7 @@
 
 -- The following ensures certain texture filter effects provide same behavior on external textures.
 if not pcall(function() display.setDefault("isExternalTextureRetina", false) end) then
-	local msg = [[Warning: [BinaryArchiveModule] If you're using filter effects, you may experience different results with this module. To avoid issues, please update Solar2D to version 2022.3678 or higher.]]
+	local msg = [[Warning: [BinaryArchiveModule] You're using an older version of Solar2D, please update to version 2022.3678 or higher to avoid graphical issues when using this module.]]
 	print(msg)
 end
 
@@ -41,7 +41,7 @@ local cipher = nil	-- initialized with M.enableSSL()
 local md5 = nil		-- initialized with M.enableSSL()
 
 local fileHeader = "BA22"	-- file signature, can be changed here or temporarily using M.setFileSignature().
-local debugMode = true
+local debugMode = false
 local currentArchive
 local delimiter = "\n"	-- should NOT be changed, data structure is based off lines.
 local delimiterSize = s_len(delimiter)
@@ -58,7 +58,7 @@ local M = {}
 		if not debugMode then return end
 		local info = debug.getinfo(3)
 		local file, line, funcName = s_gsub(info.source, "=",""), info.currentline, debug.getinfo(2, "n").name
-		print("[BinaryArchiveModule] Trace:\n\tFile: " .. file .. "\n\tLine: " .. line .. ", Function: " .. funcName)
+		print("[BinaryArchiveModule] Trace:\n\tFile: " .. file .. "\n\tLine: " .. line .. ", Function: " .. funcName .. "\n\tUsing Encryption: " .. (openssl and "true" or "false"))
 	end
 
 	local function sendToConsole(...)
@@ -124,10 +124,11 @@ local M = {}
 
 		local binData = binFile:read(currentArchive[file].bytes)
 		local finalData = openssl and cipher:decrypt(binData, currentArchive.key) or binData -- decrypt only if openssl is enabled.
- 
+
 		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = finalData, format = "mask" } or
 											bytemap.loadTexture{ from_memory = finalData }
-
+		
+		if not currentArchive.binaryData[file] then sendToConsole("Error: [BinaryArchiveModule] Texture load failed: ", file) ; printDebug() return false end
 		sendToConsole("[BinaryArchiveModule] Actual file fetched:", file)
 	end
 
@@ -170,41 +171,6 @@ local M = {}
 			io_close(file)
 	end
 
-	local function createBinaryData(options_)
-		local o = options_
-		local header = fileHeader .. delimiter
-		local numFiles = indexCounter .. delimiter
-		local baseDir = o.baseDir
-		local outputName = o.output and ("/" .. o.output) or ("/" .. defaultOutputName)
-		local outputFile = baseDir .. "\n"
-
-		local file, err = io_open(outputFile, 'ab')
-			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
-			file:write(header)		-- write file header
-			file:write(numFiles)
-
-		sendToConsole("[BinaryArchiveModule] Creating binary archive ...")
-		-- load binary data
-		local fileList = o.fileList
-		local loadedFilecount = 0
-		for i=1, #fileList do
-			local path = baseDir .. "/" .. fileList[i]
-				sendToConsole("[BinaryArchiveModule] appending: " .. path)
-			local binFile, err = io_open( path, "rb" )
-				if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
-			local binData = binFile:read( "*a" )
-			io_close( binFile )
-			file:write(fileList[i] .. delimiter)		-- append file name
-			file:write(s_len(binData) .. delimiter)     -- append data size in bytes
-			file:write(binData)                         -- append data
-			loadedFilecount = loadedFilecount + 1
-		end
-		io_close(file)
-		
-		updateTotalFiles(outputFile, loadedFilecount)
-		sendToConsole("[BinaryArchiveModule] Archive '" .. defaultOutputName .. "' successfully created. Contains " .. loadedFilecount .. " files.")
-	end
-	
 	local function createData(options_)
 		local o = options_
 		local header = fileHeader .. delimiter
@@ -302,7 +268,7 @@ local M = {}
 		local signatureSize = s_len(signature) + delimiterSize
 		local binaryArchiveData = {}	-- keep list of files cached.
 			binaryArchiveData.binaryData = {} -- caches binary data
-			binaryArchiveData.enableCache = "bool" == type(o.enableCache) and o.enableCache or false
+			binaryArchiveData.enableCache = "boolean" == type(o.enableCache) and o.enableCache or false
 			binaryArchiveData.imageSuffix = imageSuffix	-- must match table in config.lua
 			binaryArchiveData.signature = signature
 			binaryArchiveData.key = key
