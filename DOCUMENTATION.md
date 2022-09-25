@@ -6,7 +6,7 @@
 - [*.new](#new)
 - [*.load](#load)
 - [*.setCurrentArchive](#setCurrentArchive)
-- [*.clearCache](#clearCache*)
+- [*.clearCache](#clearCache)
 - [*.clearBinaryData](#clearBinaryData)
 - [*.setFileSignature](#setFileSignature)
 - [*.getFileSignature](#getFileSignature)
@@ -46,24 +46,26 @@ Creates a new archive.
 
 - options (required), a [Table](https://docs.coronalabs.com/api/type/Table.html) containing the following basic parameters:
 	- signature (optional)
-		- [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. This value can be used when loading an archive. Default is `"BA22"`.
+		- [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. Default is `"BA22"`.
 
 	- baseDir (required)
 		- [String](https://docs.coronalabs.com/api/type/String.html). Full path to directory where assets are located on disk. All files are appended; includes files in sub-directories.
+		> Note: Use the `exlude` option below to filter out any unwanted file types.
 
 	- output (optional)
 		- [String](https://docs.coronalabs.com/api/type/String.html). Name given to the archive file. Default is `"data.bin"`. 
 
 	- fileList (optional)
-		- [Table](https://docs.coronalabs.com/api/type/Table.html). If provided, only specified files in this list are appended to archive. Files must reside within `baseDir` and their names must include relative paths.
-	
-	- key (required)
-		- [String](https://docs.coronalabs.com/api/type/String.html). This is used to encrypt data in archive.
+		- [Table](https://docs.coronalabs.com/api/type/Table.html). If provided, only specified files in this list are appended to archive. Files must reside within `baseDir` and their names must include relative path.
+
+	- key (*required*)
+		- [String](https://docs.coronalabs.com/api/type/String.html). This is used to encrypt data in archive, only required if encryption is enabled.
 	
 	- exclude (optional)
-		- [Table](https://docs.coronalabs.com/api/type/Table.html). Can be used to filter files by file extension.
+		- [Table](https://docs.coronalabs.com/api/type/Table.html). Any file matching the listed file extension will be excluded and not appended.
 		- The following will ignore *.txt, *.lua, and *.mp4 file types.
 		</br>	```exclude = {txt=true, lua=true, mp4=true}```
+		> Note: File extensions are case sensitive, you should use upper or lower case where necessary.
 	
 
 </br>
@@ -180,29 +182,29 @@ Loads an archive. Returns a `binaryArchiveData` [Table](https://docs.coronalabs.
 
 ### Syntax:
 
-- MODULE.load( options , useRawPath)
+- MODULE.load( options , overwritePath)
 
 ### Parameters:
 
 - options (required), a [Table](https://docs.coronalabs.com/api/type/Table.html) containing the following basic parameters:
 
 	- signature (optional)
-	   - [String](https://docs.coronalabs.com/api/type/String.html). An ID for the archive file header. If none provided it will use default value. Default is `"BA22"`.
+	   - [String](https://docs.coronalabs.com/api/type/String.html). The ID used when creating the archive. If none provided it will use default value: `"BA22"`.
 
 	- file (required)
-	   - [String](https://docs.coronalabs.com/api/type/String.html). Location of file relative to where main.lua resides; this is the default location. If file is located elsewhere then full path can be provided here while setting `useRawPath` to true.
+	   - [String](https://docs.coronalabs.com/api/type/String.html). Location of file relative to where main.lua resides; this is the default location. If file is located elsewhere then specify path here and set `overwritePath` to true, see below.
 	
 	- key (required)
-		- [String](https://docs.coronalabs.com/api/type/String.html). To decrypt data in archive, must be same value as key used when archive was created.
+		- [String](https://docs.coronalabs.com/api/type/String.html). Used to decrypt data in archive. Must be same key provided when archive was created.
 	
 	- enableCache (optional)
-	   - [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). Enable or disable the caching of binary data when fetched, minimizing disk access. Default is `false`. 
-		 > Note: If set `true` then `*.clearCache()` or ` *.clearBinaryData()` should be used respectively to free up memory.
+	   - [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). Enables the caching of binary data after being fetched, minimizing disk access. Default is `false`. 
+		 > Note: If set `true` then [*.clearCache](#clearCache) or [*.clearBinaryData](#clearBinaryData) should be used respectively to free up memory.
 
 	- imageSuffix (*optional*)
 	   - [Table](https://docs.coronalabs.com/api/type/Table.html). If [dynamic image selection](https://docs.coronalabs.com/guide/basics/configSettings/index.html#dynamic-image-selection) is configured in `config.lua`, then it should also be provided here. If not provided then dynamic-image-selection will not work for certain objects in wrapped functions.
 
-- useRawPath (optional)
+- overwritePath (optional)
 
 	- [Boolean](https://docs.coronalabs.com/api/type/Boolean.html). Set to `true` if specifying a `file` path other than project's directory. Default is `false`.
 
@@ -705,7 +707,7 @@ local data = binarch.fetch("data.txt")
 </br>
 
 # *.encrypt
-Encrypts any value passed as a string, returns encrypted string. 
+Encrypts any input data, returns encrypted string. 
 
 ### Syntax:
 - MODULE.encrypt( data, key )
@@ -736,7 +738,7 @@ local encryptedToken = binarch.encrypt(secretData, "key123abc")
 </br>
 
 # *.decrypt
-Decrypts any value passed as a string, returns decrypted string. 
+Decrypts encrypted input data, returns decrypted string. 
 
 ### Syntax:
 - MODULE.refresh( data, key )
@@ -783,7 +785,7 @@ Queue up the release of a texture that was created with [*.newTexture](#newTextu
 - data (required)
 	- [String](https://docs.coronalabs.com/api/type/String.html). The same name of file that was used to create the texture.
 
-> Note: Releasing textures does not effect existing objects. If the texture is not in use it will be removed immediately, otherwise it'll be removed when it's no longer in use.
+> Note: Releasing textures does not affect existing objects. If the texture is not in use it will be removed immediately, otherwise it'll be removed when it's no longer in use.
 ## Example
 ```lua
 -- load module
