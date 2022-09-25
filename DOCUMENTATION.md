@@ -24,7 +24,7 @@
 - [*.newImageRect](#newImageRect)
 - [*.newImageSheet](#newImageSheet)
 - [*.newTexture](#newTexture)
-- [*.newMask](#newMask)
+- [*.setMask](#setMask)
 - [*.newOutline](#newOutline)
 - [*.newEmitter](#newEmitter)
 - [*.imagePaint](#imagePaint)
@@ -82,7 +82,7 @@ local binarch = require( "m_binary_archive" )
 local options = { baseDir = "D:/Projects/Solar2D/AwesomeProject/assets/graphics" }
 
 -- create a new archive, output will be saved at baseDir
-binarch.new(options)
+binarch.new( options )
 ```
 ### Create a new archive with encryption enabled:
 ```lua
@@ -99,7 +99,7 @@ local options = {
 }
 
 -- create a new archive, output will be saved at baseDir
-binarch.new(options)
+binarch.new( options )
 ```
 ### Create a single archive with specified fileList and signature:
 ```lua
@@ -150,7 +150,7 @@ local options2 = {
 		output = "data2.bin"
 	}
 
--- create a new archives, output will be saved at baseDir respectively
+-- create new archives, output will be saved at baseDir respectively
 binarch.new( options1 )
 binarch.new( options2 )
 ```
@@ -192,7 +192,7 @@ Loads an archive. Returns a `binaryArchiveData` [Table](https://docs.coronalabs.
 	   - [String](https://docs.coronalabs.com/api/type/String.html). The ID used when creating the archive. If none provided it will use default value: `"BA22"`.
 
 	- file (required)
-	   - [String](https://docs.coronalabs.com/api/type/String.html). Location of file relative to where main.lua resides; this is the default location. If file is located elsewhere then specify path here and set `overwritePath` to true, see below.
+	   - [String](https://docs.coronalabs.com/api/type/String.html). Location of file relative to where main.lua resides; this is the default location. If file is located elsewhere then specify path here and set `overwritePath` to `true`, see below.
 	
 	- key (required)
 		- [String](https://docs.coronalabs.com/api/type/String.html). Used to decrypt data in archive. Must be same key provided when archive was created.
@@ -493,13 +493,13 @@ local options = {
 	}
 
 -- load archive
-local settings_bin = binarch.load( options )
+binarch.load( options )
 
 -- fetch decrypted data
-local score = binarch.fetch("player_score", settings_bin)
+local score = binarch.fetch( "player_score" )
 
 -- create a text object with score data
-local label = display.newText(score, 50, 25)
+local label = display.newText( score, 50, 25 )
 ```
 
 </br>
@@ -909,14 +909,16 @@ Returns a [TextureResource](https://docs.coronalabs.com/api/type/TextureResource
 
 </br>
 
-# *.newMask
-Returns a [Mask](https://docs.coronalabs.com/api/type/Mask/index.html) object.
+# *.setMask
+Applies specified texture file as a mask to object. Once mask is apllied it works the same as [Mask](https://docs.coronalabs.com/api/type/Mask/index.html).
 
 ### Syntax:
-- MODULE.newMask( filename )
+- MODULE.setMask( object, filename )
 
 ### Parameters:
-- Same as [graphics.newMask](https://docs.coronalabs.com/api/library/graphics/newMask.html) except no `baseDir`. 
+- The `object` to apply mask.
+- The `filename` of an image file as stored in an archive.
+> Note: Once mask is applied to object it works the same as [graphics.setMask](https://docs.coronalabs.com/api/library/graphics/newMask.html). 
 
 </br>
 

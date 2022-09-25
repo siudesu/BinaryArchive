@@ -82,10 +82,9 @@ local balloon = binarch.newImageRect( "SnapshotEraser/balloon.jpg", 200, 240 )
 local rect = display.newRect( 150, 150, 50, 50 )
 	binarch.imagePaint( rect, "Fishies/fish.small.red.png" )
 
--- create a mask object and apply it to newImageRect
-local mask = binarch.newMask( "SnapshotEraser/mask.png" )
+-- create newImageRect and apply mask
 local bg = binarch.newImageRect( "FilterGraph/image.jpg", 480, 320 )
-	bg:setMask( mask )
+	binarch.setMask( bg, "SnapshotEraser/mask.png" )
 	bg.x = 240
 	bg.y = 160
 ```
@@ -109,15 +108,15 @@ These are designed to work in place of Solar2D API functions by the same name:
 ### From `graphics.*` API:
 ```lua
 	MODULE.newImageSheet( filename, options )
-	MODULE.newMask( filename )
 	MODULE.newOutline( coarsenessInTexels, imageFileName )
 	MODULE.newTexture( params ) -- this returns a Bytemap texture which is used in the same manner as graphics.newTexure()
 ```
 ### Custom:
 ```lua
 	-- to apply object.fill effects
-	MODULE.imagePaint( object, filename )
 	MODULE.compositePaint( object, filename1,  filename2 )
+	MODULE.imagePaint( object, filename )
+	MODULE.setMask( object, filename )	-- works the same as 
 ```
 
 </br>
