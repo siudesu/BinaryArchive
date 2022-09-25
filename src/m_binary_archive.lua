@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.24.0
+--	Last Revision: 2022.09.25.0
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -7,7 +7,7 @@
 
 -- The following ensures certain texture filter effects provide same behavior on external textures.
 if not pcall(function() display.setDefault("isExternalTextureRetina", false) end) then
-	local msg = [[Warning: [BinaryArchiveModule] You're using an older version of Solar2D, please update to version 2022.3678 or higher to avoid graphical issues when using this module.]]
+	local msg = [[Warning: [BinaryArchiveModule] You're using an older version of Solar2D, please update to version 2022.3678 or higher to avoid potential graphical issues when using this module.]]
 	print(msg)
 end
 
@@ -20,6 +20,7 @@ local openssl = nil								-- for encryption; initialized with M.enableSSL()
 
 -- localization
 local assert = assert
+local debug = debug
 local pairs = pairs
 local print = print
 local tonumber = tonumber
@@ -39,11 +40,10 @@ local t_sort = table.sort
 -- module variables
 local cipher = nil	-- initialized with M.enableSSL()
 local md5 = nil		-- initialized with M.enableSSL()
-
-local fileHeader = "BA22"	-- file signature, can be changed here or temporarily using M.setFileSignature().
-local debugMode = false
+local fileHeader = "BA22"	-- file signature, can be changed here or temporarily using M.setFileSignature()
+local debugMode = true
 local currentArchive
-local delimiter = "\n"	-- should NOT be changed, data structure is based off lines.
+local delimiter = "\n"	-- should NOT be changed, data structure is based off new line delimiter
 local delimiterSize = s_len(delimiter)
 local indexCounter = s_format("%08x", 0x0) 
 local indexCounterSize = s_len(indexCounter) + delimiterSize
@@ -233,7 +233,7 @@ local M = {}
 		local file = io_open(path, "r")
 			if not file then createData(o) return end
 			io_close(file)
-			
+
 		-- else, prompt whether to overwrite it, or cancel
 		local function onComplete( event )
 			if ( event.action == "clicked" ) then
@@ -755,7 +755,7 @@ local M = {}
 		return currentArchive.binaryData[filename]
 	end
 	
-	function M.newMask(filename_)
+	function M.setMask(obj_, filename_)
 		-- Returns a newMask from graphics library.
 		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
@@ -769,14 +769,13 @@ local M = {}
 
 		-- create newMask
 		local newMask = graphics.newMask( currentArchive.binaryData[filename].filename, currentArchive.binaryData[filename].baseDir )
-
+			obj_:setMask(newMask)
+			
 		-- do not cache data if enableCache is not set 'true'
 		if not currentArchive.enableCache then
 			currentArchive.binaryData[filename]:releaseSelf()
 			currentArchive.binaryData[filename] = nil
 		end
-
-		return newMask
 	end
 
 	function M.newOutline(coarsenessInTexels_, filename_)
