@@ -16,11 +16,12 @@
 </br>
 
 ## Limitations
- - While the purpose of using this type of archive is, in part, loading assets without disk extraction, in this fashion it is currently limited to `png`, `jpg`, and `jpeg` files.
- </br>Any file can be appended, but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
+ - While the purpose of using this type of archive is, in part, loading assets without disk extraction, in this fashion it is currently limited to `png`, `jpg`, and `jpeg` files, and common data.
+	>Any file can be appended, but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
 
- - Appended file (or data) size should be <span style="color:red">< 200 MB</span> without encryption. (Limitation on Lua IO read(), currently processed in a single pass.)
- - Appended file (or data) size should be <span style="color:red">< 100 MB</span> with encryption enabled (Limitation on ciphering without using chunks.)
+- Size limit per file to append:
+	- If not using encryption, no greater than `200 MB`. (Limitation on Lua IO read(), currently processed in a single pass.)
+	- If using encryption, no greater than `100 MB`. (Limitation on ciphering without using chunks.)
 
 </br>
 
@@ -56,35 +57,35 @@ Tests performed on a PC with HDD (not SSD), 1.6 GB archive with 18,383 files, me
 ### Creating a new archive with default values:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- specify full path where assets are located (all files will be appended, includes sub-directories)
 local options = { baseDir = "D:/Projects/Solar2D/AwesomeProject/assets/graphics" }
 
 -- create a new archive, output will be saved at baseDir
-binarch.new(options)
+bin.new(options)
 ```
 ### Loading and using an archive:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- specify file to load, file path is relative to project where main.lua resides
 local options = { file = "assets/data.bin" }
 
 -- load binary file
-binarch.load(options)
+bin.load(options)
 
 -- create newImageRect using wrapper function; parameters are the same as display.newImageRect()
-local balloon = binarch.newImageRect( "SnapshotEraser/balloon.jpg", 200, 240 )
+local balloon = bin.newImageRect( "SnapshotEraser/balloon.jpg", 200, 240 )
 
 -- create new rectangle and apply object fill using custom function
 local rect = display.newRect( 150, 150, 50, 50 )
-	binarch.imagePaint( rect, "Fishies/fish.small.red.png" )
+	bin.imagePaint( rect, "Fishies/fish.small.red.png" )
 
 -- create newImageRect and apply mask
-local bg = binarch.newImageRect( "FilterGraph/image.jpg", 480, 320 )
-	binarch.setMask( bg, "SnapshotEraser/mask.png" )
+local bg = bin.newImageRect( "FilterGraph/image.jpg", 480, 320 )
+	bin.setMask( bg, "SnapshotEraser/mask.png" )
 	bg.x = 240
 	bg.y = 160
 ```
@@ -109,14 +110,13 @@ These are designed to work in place of Solar2D API functions by the same name:
 ```lua
 	MODULE.newImageSheet( filename, options )
 	MODULE.newOutline( coarsenessInTexels, imageFileName )
-	MODULE.newTexture( params ) -- this returns a Bytemap texture which is used in the same manner as graphics.newTexure()
+	MODULE.newTexture( params ) -- this returns a Bytemap texture used as a replacement for [graphics.newTexure](https://docs.coronalabs.com/api/library/graphics/newTexture.html)
 ```
 ### Custom:
 ```lua
-	-- to apply object.fill effects
-	MODULE.compositePaint( object, filename1,  filename2 )
-	MODULE.imagePaint( object, filename )
-	MODULE.setMask( object, filename )	-- works the same as 
+	MODULE.compositePaint( object, filename1,  filename2 )	-- wrapper for [CompositePaint](https://docs.coronalabs.com/api/type/CompositePaint/index.html)
+	MODULE.imagePaint( object, filename )					-- wrapper for [BitmapPaint] (https://docs.coronalabs.com/api/type/BitmapPaint/index.html)
+	MODULE.setMask( object, filename )						-- wrapper for [graphics.setMask](https://docs.coronalabs.com/api/type/DisplayObject/setMask.html)
 ```
 
 </br>
