@@ -12,6 +12,8 @@
 - [*.getFileSignature](#getFileSignature)
 - [*.fetch](#fetch)
 - [*.fetchRaw](#fetchRaw)
+- [*.extract](#extract)
+- [*.extractRaw](#extractRaw)
 - [*.appendData](#appendData)
 - [*.appendFile](#appendFile)
 - [*.refresh](#refresh)
@@ -76,21 +78,21 @@ Creates a new archive.
    
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- specify full path where assets are located (all files will be appended, includes sub-directories)
 local options = { baseDir = "D:/Projects/Solar2D/AwesomeProject/assets/graphics" }
 
 -- create a new archive, output will be saved at baseDir
-binarch.new( options )
+bin.new( options )
 ```
 ### Create a new archive with encryption enabled:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable SSL for encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- specify full path where assets are located (all files will be appended, includes sub-directories)
 local options = {
@@ -99,12 +101,12 @@ local options = {
 }
 
 -- create a new archive, output will be saved at baseDir
-binarch.new( options )
+bin.new( options )
 ```
 ### Create a single archive with specified fileList and signature:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 local options = {
 		signature = "abc123",
@@ -117,12 +119,12 @@ local options = {
 	}
 
 -- create a new archive, output will be saved at baseDir
-binarch.new( options )
+bin.new( options )
 ```
 ### Create a single archive with file type exclusion:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 local options = {
 		baseDir = "C:/Projects/AwesomeApp/assets",
@@ -130,12 +132,12 @@ local options = {
 	}
 
 -- create a new archive, output will be saved at baseDir
-binarch.new( options )
+bin.new( options )
 ```
 ### Create multiple archives:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 local options1 = {
 		signature = "abc123",
@@ -151,17 +153,17 @@ local options2 = {
 	}
 
 -- create new archives, output will be saved at baseDir respectively
-binarch.new( options1 )
-binarch.new( options2 )
+bin.new( options1 )
+bin.new( options2 )
 ```
 
 ###   Create an empty archive to be used for saving data:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- The options below are provided to create an empty archive, and can be used to append data at a later time.
 local options = {
@@ -172,7 +174,7 @@ local options = {
 	}
 
 -- create a new archive, output will be saved at baseDir
-binarch.new( options )
+bin.new( options )
 ```
 
 </br>
@@ -218,23 +220,23 @@ Loads an archive. Returns a `binaryArchiveData` [Table](https://docs.coronalabs.
    
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 local options = { file = "data.bin" }
 
 -- load archive
-binarch.load( options )
+bin.load( options )
 
 -- create new object from assets in archive
-local bg = binarch.newImageRect( "graphics/background.png", 800, 600 )
+local bg = bin.newImageRect( "graphics/background.png", 800, 600 )
 ```
 ### Load multiple encrypted archives and use content scaling suffix:
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option tables
 local options1 = {
@@ -257,32 +259,32 @@ local options2 = {
 		}
 
 -- archives are set active when loaded, however, only one archive can be active at any time
-local airplanesBin = binarch.load( options1 )
-local carsBin = binarch.load( options2 )	-- last archive loaded is set active
+local airplanesBin = bin.load( options1 )
+local carsBin = bin.load( options2 )	-- last archive loaded is set active
 
 -- create display groups to insert our objects
 local airplaneGroup = display.newGroup()
 local carGroup = display.newGroup()
 
 -- create some airplane objects
-binarch.setCurrentArchive( airplanesBin ) -- toggle archive
+bin.setCurrentArchive( airplanesBin ) -- toggle archive
 
-local jet1 = binarch.newImageRect( airplaneGroup, "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
+local jet1 = bin.newImageRect( airplaneGroup, "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
 	jet1.x = 150
 	jet1.y = 150
 	
-local airbus1 = binarch.newImageRect( airplaneGroup, "airbus/a300.png", 200, 200 )
+local airbus1 = bin.newImageRect( airplaneGroup, "airbus/a300.png", 200, 200 )
 	airbus1.x = 300
 	airbus1.y = 150
 	
 -- create some car objects
-binarch.setCurrentArchive( carsBin ) -- toggle archive
+bin.setCurrentArchive( carsBin ) -- toggle archive
 
-local skyline1 = binarch.newImageRect( carGroup, "imports/nissan/gtr32.png", 100, 50 )
+local skyline1 = bin.newImageRect( carGroup, "imports/nissan/gtr32.png", 100, 50 )
 	skyline1.x = 100
 	skyline1.y = 25
 	
-local supra1 = binarch.newImageRect( carGroup, "imports/toyota/supra.png", 100, 50 )
+local supra1 = bin.newImageRect( carGroup, "imports/toyota/supra.png", 100, 50 )
 	supra1.x = 200
 	supra1.y = 25
 ```
@@ -306,22 +308,22 @@ Sets an archive active.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- archives are set active when loaded, however, only one archive can be active at any time
-local airplanesBin = binarch.load( { file = "assets/data1.bin" } )
-local carsBin = binarch.load( { file = "assets/data2.bin" } )	-- last archive loaded is active
+local airplanesBin = bin.load( { file = "assets/data1.bin" } )
+local carsBin = bin.load( { file = "assets/data2.bin" } )	-- last archive loaded is active
 
 -- create an object from last loaded archive
-local skyline1 = binarch.newImageRect( "imports/nissan/gtr32.png", 100, 50 )
+local skyline1 = bin.newImageRect( "imports/nissan/gtr32.png", 100, 50 )
 	skyline1.x = 100
 	skyline1.y = 25
 
 -- set active a different archive
-binarch.setCurrentArchive( airplanesBin ) -- toggle archive
+bin.setCurrentArchive( airplanesBin ) -- toggle archive
 
 -- create object with current active archive
-local jet1 = binarch.newImageRect( "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
+local jet1 = bin.newImageRect( "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
 	jet1.x = 150
 	jet1.y = 150
 
@@ -347,7 +349,7 @@ Clears **ALL** cached data and releases textures from specified archive.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- setup option table with cache enabled
 local options = {
@@ -356,19 +358,19 @@ local options = {
 		}
 
 -- load archive
-binarch.load( options )
+bin.load( options )
 
 -- create objects from archive
-local jet1 = binarch.newImageRect( "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
+local jet1 = bin.newImageRect( "jets/jumbo/Dassault Falcon 7X.png", 200, 200 )
 	jet1.x = 150
 	jet1.y = 150
 	
-local airbus1 = binarch.newImageRect( "airbus/a300.png", 200, 200 )
+local airbus1 = bin.newImageRect( "airbus/a300.png", 200, 200 )
 	airbus1.x = 300
 	airbus1.y = 150
 
 -- clear cache of all objects from current active archive
-binarch.clearCache()
+bin.clearCache()
 ```
 
 </br>
@@ -394,7 +396,7 @@ Clears cache from specified data and archive.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- setup option table with cache enabled
 local options = {
@@ -402,13 +404,13 @@ local options = {
 			enableCache = true,
 		}
 
-binarch.load( options )
+bin.load( options )
 
 -- create new object from assets in archive
-local bg = binarch.newImageRect( "graphics/background.png", 800, 600 )
+local bg = bin.newImageRect( "graphics/background.png", 800, 600 )
 
 -- clear cached data
-binarch.clearBinaryData("graphics/background.png")
+bin.clearBinaryData("graphics/background.png")
 ```
 
 </br>
@@ -427,10 +429,10 @@ Sets a default file signature to use for creating or loading archives.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- set a new default file signature
-binarch.setFileSignature("MMXXII")
+bin.setFileSignature("MMXXII")
 
 -- no signature specified, it will use the new default signature
 local options = {
@@ -438,7 +440,7 @@ local options = {
 		}
 
 -- load archive
-binarch.load( options )
+bin.load( options )
 ```
 
 </br>
@@ -452,10 +454,10 @@ Returns the current default file signature.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- get current default file signature
-local currentFileSignature = binarch.getFileSignature()
+local currentFileSignature = bin.getFileSignature()
 
 print("Current File Signature is: " .. tostring(currentFileSignature))
 ```
@@ -481,10 +483,10 @@ Returns decrypted data from archive if encryption is enabled, else it returns da
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option table with encryption key
 local options = {
@@ -493,10 +495,10 @@ local options = {
 	}
 
 -- load archive
-binarch.load( options )
+bin.load( options )
 
 -- fetch decrypted data
-local score = binarch.fetch( "player_score" )
+local score = bin.fetch( "player_score" )
 
 -- create a text object with score data
 local label = display.newText( score, 50, 25 )
@@ -521,10 +523,10 @@ Returns data from archive as-is, whether encrypted or not.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option table with encryption key
 local options = {
@@ -533,18 +535,106 @@ local options = {
 	}
 
 -- load archive
-local settings_bin = binarch.load( options )
+local settings_bin = bin.load( options )
 
 -- fetch encrypted data
-local encryptedScore = binarch.fetchRaw("player_score", settings_bin)
+local encryptedScore = bin.fetchRaw("player_score", settings_bin)
 
 -- manually decrypt data before use ; key used is the same that was provided to with load( options )
-local score = binarch.decrypt(encryptedScore, tostring(37042))
+local score = bin.decrypt(encryptedScore, tostring(37042))
 
 -- create a text object with score data
 local label = display.newText(score, 50, 25)
 ```
 
+</br>
+
+# *.extract
+Extracts data from archive and saves it specified path on disk. if encryption is enabled data will be decrypted.
+
+### Syntax:
+- MODULE.extract( filename, destination, binaryArchiveData)
+
+### Parameters:
+
+- filename (required)
+	- [String](https://docs.coronalabs.com/api/type/String.html). The `filename` of stored data, relative path included.
+
+- destination (required)
+	- [String](https://docs.coronalabs.com/api/type/String.html). Path on disk where file will be saved.
+
+- binaryArchiveData (*optional*, active archive will be used if none provided)
+	- [Table](https://docs.coronalabs.com/api/type/Table.html). The `binaryArchiveData` is the table returned when using [*.load](#load).
+
+## Example
+```lua
+-- load module
+local bin = require( "m_binary_archive" )
+
+-- enable encryption
+bin.enableSSL()
+
+-- setup option table with encryption key
+local options = {
+		file = "settings.bin",
+		key = tostring(37042),
+	}
+
+-- load archive
+bin.load( options )
+
+-- get path to extract on disk
+local path = system.pathForFile("", system.TemporaryDirectory)
+
+-- extract files
+bin.extract("graphics/SpriteTiles/sprites.png", path)
+bin.extract("graphics/Fishies/fish.small.red.png", path)
+bin.extract("graphics/HorseAnimation/moon.png", path)
+```
+</br>
+
+# *.extractRaw
+Extracts data as-is from archive and saves it specified path on disk, no decryption is performed.
+
+### Syntax:
+- MODULE.extractRaw( filename, destination, binaryArchiveData)
+
+### Parameters:
+
+- filename (required)
+	- [String](https://docs.coronalabs.com/api/type/String.html). The `filename` of stored data, relative path included.
+
+- destination (required)
+	- [String](https://docs.coronalabs.com/api/type/String.html). Path on disk where file will be saved.
+
+- binaryArchiveData (*optional*, active archive will be used if none provided)
+	- [Table](https://docs.coronalabs.com/api/type/Table.html). The `binaryArchiveData` is the table returned when using [*.load](#load).
+
+## Example
+```lua
+-- load module
+local bin = require( "m_binary_archive" )
+
+-- enable encryption
+bin.enableSSL()
+
+-- setup option table with encryption key
+local options = {
+		file = "settings.bin",
+		key = tostring(37042),
+	}
+
+-- load archive
+bin.load( options )
+
+-- get path to extract on disk
+local path = system.pathForFile("", system.TemporaryDirectory)
+
+-- extract files, if files are encrypted in archive then they will also be encrypted on disk at specified path
+bin.extractRaw("graphics/SpriteTiles/sprites.png", path)
+bin.extractRaw("graphics/Fishies/fish.small.red.png", path)
+bin.extractRaw("graphics/HorseAnimation/moon.png", path)
+```
 </br>
 
 # *.appendData
@@ -570,11 +660,11 @@ Encrypts data, if encryption is enabled, and is appends it to specified archive.
 ### Append data to an existing archive
 ```lua
 -- load modules
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 local json = require( "json" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option table with encryption key
 local options = {
@@ -583,26 +673,26 @@ local options = {
 	}
 
 -- load archive
-local settings_bin = binarch.load( options )
+local settings_bin = bin.load( options )
 
 local data = {}
 	data.score = 0
 	data.coins = 20
 
 -- append string
-binarch.appendData("player_score", tostring(data.coins))
+bin.appendData("player_score", tostring(data.coins))
 
 -- append JSON data
 local encodedTable = json.encode(data)
-binarch.appendData("data", encodedTable)
+bin.appendData("data", encodedTable)
 ```
 ### Create a new archive for storing only strings of data
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option table, an empty archive will be created in system.TemporaryDirectory
 local options = {
@@ -613,16 +703,16 @@ local options = {
 	}
 
 -- create archive
-binarch.new( options )
+bin.new( options )
 
 -- later in code ------
 
 -- load archive
-binarch.load( {file=system.pathForFile( "temp.bin", system.TemporaryDirectory )}, key=tostring(37042)})
+bin.load( {file=system.pathForFile( "temp.bin", system.TemporaryDirectory )}, key=tostring(37042)})
 
-binarch.appendData("time_1", tostring(os.clock()))
+bin.appendData("time_1", tostring(os.clock()))
 
-print("Time recorded:",binarch.fetch("time_1"))
+print("Time recorded:",bin.fetch("time_1"))
 ```
 
 </br>
@@ -649,10 +739,10 @@ Encrypts a file from disk, if encryption is enabled, and appends it to specified
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- setup option table with key for encryption
 local options = {
@@ -661,13 +751,13 @@ local options = {
 	}
 
 -- load archive
-local settings_bin = binarch.load( options )
+local settings_bin = bin.load( options )
 
 -- get file path
 local path = system.pathForFile( "data.txt", system.TemporaryDirectory )
 
 -- append file from disk
-binarch.appendFile("data.txt", path)
+bin.appendFile("data.txt", path)
 ```
 
 </br>
@@ -686,22 +776,22 @@ Refreshes a loaded `binaryArchiveData`, should be used after appending new file 
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- load archive
-local settings_bin = binarch.load(  { file = "settings.bin" } )
+local settings_bin = bin.load(  { file = "settings.bin" } )
 
 -- get file path
 local path = system.pathForFile( "data.txt", system.TemporaryDirectory )
 
 -- append file from disk
-binarch.appendFile("data.txt", path)
+bin.appendFile("data.txt", path)
 
 -- refresh archive to fetch newly appended data
-binarch.refresh()
+bin.refresh()
 
 -- fetch new data
-local data = binarch.fetch("data.txt")
+local data = bin.fetch("data.txt")
 ```
 
 </br>
@@ -725,14 +815,14 @@ Encrypts any input data, returns encrypted string.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- encrypt data
 local secretData = "token:123456789"
-local encryptedToken = binarch.encrypt(secretData, "key123abc")
+local encryptedToken = bin.encrypt(secretData, "key123abc")
 ```
 
 </br>
@@ -756,20 +846,20 @@ Decrypts encrypted input data, returns decrypted string.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- encrypt data
 local secretData = "token:123456789"
-local encryptedToken = binarch.encrypt(secretData, "key123abc")
+local encryptedToken = bin.encrypt(secretData, "key123abc")
 print("Encrypted data:", encryptedToken)
 
 secretData = nil
 
 -- decrypt data
-local tempData = binarch.decrypt(encryptedToken, "key123abc")
+local tempData = bin.decrypt(encryptedToken, "key123abc")
 print("Decrypted data:", tempData)
 ```
 </br>
@@ -789,17 +879,17 @@ Queue up the release of a texture that was created with [*.newTexture](#newTextu
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- load archive
-binarch.load(  { file = "data.bin" } )
+bin.load(  { file = "data.bin" } )
 
 -- create a rectangle
 local rect = display.newRect(100,100,100,100)
 
 -- load textures to use for composite filter
-local tex1 = binarch.newTexture("Fishies/fish.small.red.png")
-local tex2 = binarch.newTexture("HorseAnimation/moon.png")
+local tex1 = bin.newTexture("Fishies/fish.small.red.png")
+local tex2 = bin.newTexture("HorseAnimation/moon.png")
 
 local paint = {
 	type = "composite",
@@ -812,8 +902,8 @@ rect.fill = paint
 rect.fill.effect = "composite.average"
 
 -- queue texture release ; does not exisint object, textures will be removed when no longer in use.
-binarch.releaseTexture("Fishies/fish.small.red.png")
-binarch.releaseTexture("HorseAnimation/moonpng")
+bin.releaseTexture("Fishies/fish.small.red.png")
+bin.releaseTexture("HorseAnimation/moonpng")
 ```
 </br>
 # *.enableSSL
@@ -825,14 +915,14 @@ Enables openSSL plugin to use for encryption and decryption.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable encryption
-binarch.enableSSL()
+bin.enableSSL()
 
 -- encrypt data
 local secretData = "token:123456789"
-local encryptedToken = binarch.encrypt(secretData, "key123abc")
+local encryptedToken = bin.encrypt(secretData, "key123abc")
 print("Encrypted data:", encryptedToken)
 
 ```
@@ -853,10 +943,10 @@ Enable or Disable debugMode mode to assist in troubleshoot process.
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- enable debug
-binarch.setDebugMode(true)
+bin.setDebugMode(true)
 ```
 
 </br>
@@ -960,14 +1050,14 @@ Applies [object.fill](https://docs.coronalabs.com/api/type/ShapeObject/fill.html
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- load archive
-binarch.load( {file = "assets/data.bin"} )
+bin.load( {file = "assets/data.bin"} )
 
 -- create a new rectangle and apply image fill
 local rect = display.newRect( 150, 150, 50, 50 )
-binarch.imagePaint( rect,  "Fishies/fish.small.red.png" )
+bin.imagePaint( rect,  "Fishies/fish.small.red.png" )
 ```
 </br>
 
@@ -987,14 +1077,14 @@ Applies [CompositePaint](https://docs.coronalabs.com/api/type/CompositePaint/ind
 ## Example
 ```lua
 -- load module
-local binarch = require( "m_binary_archive" )
+local bin = require( "m_binary_archive" )
 
 -- load archive
-binarch.load( {file = "assets/data.bin"} )
+bin.load( {file = "assets/data.bin"} )
 
 -- create a new rectangle and apply composite fill
 local rect = display.newRect( 150, 150, 50, 50 )
-binarch.compositePaint( rect, "Fishies/fish.small.red.png",  "HorseAnimation/moon.png")
+bin.compositePaint( rect, "Fishies/fish.small.red.png",  "HorseAnimation/moon.png")
 
 -- apply effect
 rect.fill.effect = "composite.average"

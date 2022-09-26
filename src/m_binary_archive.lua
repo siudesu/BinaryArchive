@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.25.0
+--	Last Revision: 2022.09.25.1
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -30,9 +30,12 @@ local c_wrap = coroutine.wrap
 local io_open = io.open
 local io_close = io.close
 local io_lines = io.lines
+local io_write = io.write
+local io_output = io.output
 local s_format = string.format
 local s_gsub = string.gsub
 local s_len = string.len
+local s_match = string.match
 local s_sub = string.sub
 local t_sort = table.sort
 
@@ -91,8 +94,8 @@ local M = {}
 	local function insertImageSuffix(string_, suffix_)
 		-- inserts suffix in file name when using dynamic image selection
 		local str = string_
-		local pos = str:match(".*%.()") - 2
-		return str:sub(1, pos) .. suffix_ .. str:sub(pos+1) -- return new string
+		local pos = s_match(str,".*%.()") - 2
+		return s_sub(str, 1, pos) .. suffix_ .. s_sub(str, pos+1) -- return new string
 	end
 
 	local function compare(a_, b_)
@@ -134,7 +137,7 @@ local M = {}
 
 	local function getFileExtension(string_)
 		-- Returns all chars after last dot in string.
-		local pos = string_:match(".*%.()")
+		local pos = s_match(string_, ".*%.()")
 		return s_sub(string_, pos)
 	end
 
@@ -222,7 +225,7 @@ local M = {}
 			if not o.baseDir then sendToConsole("Error: [BinaryArchiveModule] Parameter 'baseDir' must be provided.") ; printDebug() return false end
 			if not o.key and openssl then sendToConsole("Error: [BinaryArchiveModule] Encryption is enabled but no 'key' parameter was provided.") ; printDebug() return false end
 			-- change backslash to forward slash to maintain compatibility
-			o.baseDir = o.baseDir:gsub("\\", "/")
+			o.baseDir = s_gsub(o.baseDir, "\\", "/")
 
 		if not o.fileList then o.fileList = getFileList(o.baseDir, o.exclude) end
 		
@@ -373,7 +376,7 @@ local M = {}
 		return fileHeader
 	end
 
-	-- fetch ; returns decrypted data
+	-- fetch ; returns decrypted data if encryption is enabled, else it returns data as is stored.
 	function M.fetch(name_, binaryArchiveData_)
 		local file = name_
 		local archive = binaryArchiveData_ or currentArchive
@@ -383,8 +386,9 @@ local M = {}
 			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("[BinaryArchiveModule] File fetched:", file)
-		local binData = binFile:read(archive[file].bytes)
-		return openssl and cipher:decrypt(binData, archive.key) or binData -- return decrypted data if openssl is enabled, else return data as is
+			local binData = binFile:read(archive[file].bytes)
+			io_close(binFile)
+		return openssl and cipher:decrypt(binData, archive.key) or binData
 	end
 
 	-- fetch Raw ; same as fetch() but returns data as-is, no decryption performed
@@ -397,7 +401,58 @@ local M = {}
 			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
 			binFile:seek("set", archive[file].offset)
 			sendToConsole("[BinaryArchiveModule] File fetched:", file)
-		return binFile:read(archive[file].bytes) -- return data as is
+			local binData = binFile:read(archive[file].bytes)
+			io_close(binFile)
+		return binData
+	end
+
+	-- extract ; extracts decrypted data to disk if encryption is enabled, else extracted data on disk will be as is stored in archive
+	function M.extract(name_, destination_, archive_)
+		local file = name_
+		local archive = binaryArchiveData_ or currentArchive
+		local binFile, err = io_open( archive.path, "rb" )
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
+			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
+			binFile:seek("set", archive[file].offset)
+			sendToConsole("[BinaryArchiveModule] File fetched:", file)
+			local binData = binFile:read(archive[file].bytes)
+			io_close(binFile)
+			
+			-- write
+			local finalData = openssl and cipher:decrypt(binData, archive.key) or binData
+			local filename = s_sub(name_, s_match(name_,'^.*()/')+1) -- capture string from last '/' found.
+			local binFile, err = io_open( destination_ .. "/" .. filename, "wb" )	
+				if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+				io_output(binFile)
+				io_write(finalData)
+				io_close(binFile)
+			sendToConsole("[BinaryArchiveModule] Data extraction complete: " .. destination_ .. "/" .. filename)
+		return true
+	end
+
+	-- extract Raw ; extracts data to disk as is stored in archive
+	function M.extractRaw(name_, destination_, archive_)
+		local file = name_
+		local archive = binaryArchiveData_ or currentArchive
+		local binFile, err = io_open( archive.path, "rb" )
+			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+			sendToConsole("[BinaryArchiveModule] Opening archive", binFile)
+			if not archive[file] then io_close(binFile); sendToConsole("Error: [BinaryArchiveModule] File not found: " .. tostring(name_)) ; printDebug() return false end
+			binFile:seek("set", archive[file].offset)
+			sendToConsole("[BinaryArchiveModule] File fetched:", file)
+			local binData = binFile:read(archive[file].bytes)
+			io_close(binFile)
+
+			-- write
+			local filename = s_sub(name_, s_match(name_,'^.*()/')+1) -- capture string from last '/' found.
+			local binFile, err = io_open( destination_ .. "/" .. filename, "wb" )	
+				if not binFile then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
+				io_output(binFile)
+				io_write(binData)
+				io_close(binFile)
+			sendToConsole("[BinaryArchiveModule] Data extraction complete: " .. destination_ .. "/" .. filename)
+		return true	
 	end
 
 	-- append Data ; appends a string of data.
@@ -417,7 +472,7 @@ local M = {}
 			updateTotalFiles(archive.path, archive.totalFiles+1)
 		return true
 	end
-	
+
 	-- append File ; appends a file from disk.
 	function M.appendFile(name_, filepath_, binaryArchiveData_)
 		-- filepath_ should be the string generated by using system.pathForFile(filename, system.DocumentsDirectory or system.ResourceDirectory)
