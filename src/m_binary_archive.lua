@@ -126,6 +126,8 @@ local M = {}
 			binFile:seek("set", currentArchive[file].offset)
 
 		local binData = binFile:read(currentArchive[file].bytes)
+			is_close(binFile)
+
 		local finalData = openssl and cipher:decrypt(binData, currentArchive.key) or binData -- decrypt only if openssl is enabled.
 
 		currentArchive.binaryData[file] = asMask_ and bytemap.loadTexture{ from_memory = finalData, format = "mask" } or
