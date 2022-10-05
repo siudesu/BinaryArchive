@@ -20,8 +20,8 @@
 	>Any file can be appended, but would need to be extracted before it can be used. Please see [FAQ](#FAQ) for more details.
 
 - Size limit per file to append:
-	- If not using encryption, no greater than `200 MB`. (Limitation on Lua IO read(), currently processed in a single pass.)
-	- If using encryption, no greater than `100 MB`. (Limitation on ciphering without using chunks.)
+	- `~200 MB` If not using encryption. (Limitation on Lua IO read(), currently processed in a single pass.)
+	- `~100 MB` If using encryption. (Limitation on ciphering without using chunks.)
 
 </br>
 
