@@ -140,7 +140,7 @@ local M = {}
 	local function getFileExtension(string_)
 		-- Returns all chars after last dot in string.
 		local pos = s_match(string_, ".*%.()")
-		return s_sub(string_, pos)
+		return pos and s_sub(string_, pos) or false
 	end
 
 	local function getFileList(baseDir_, exclude_)
