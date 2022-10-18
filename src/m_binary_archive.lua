@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.09.25.1
+--	Last Revision: 2022.10.18
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -585,13 +585,13 @@ local M = {}
 		local binFile, err = io_open( path, "rb" )
 			if not binFile then sendToConsole("Error: [BinaryArchiveModule] Failed to open file " .. err) ; printDebug() return false end
 			
-			local md5chuncks = md5.new()	-- function does not exist, not sure it's been exposed or proper binding name.
+			local md5chuncks = md5.new()	-- function does not exist, not sure whether it has been exposed or proper binding name exsist.
 			-- chunck up data line by line
 			for line in io_lines(binFile) do 
-				md5chuncks:update(line) -- this may not be actual function name.
+				md5chuncks:update(line) -- this may not be the actual function name.
 			end
 			io_close( binFile )
-		return md5chuncks:final() -- this may not be actual function name.
+		return md5chuncks:final() -- this may not be the actual function name.
 	end
 
 	-- enableSSL ; optional for encryption
@@ -812,8 +812,9 @@ local M = {}
 		return currentArchive.binaryData[filename]
 	end
 	
-	function M.setMask(obj_, filename_)
-		-- Returns a newMask from graphics library.
+	function M.newMask(filename_)
+		-- Returns a newMask from graphics library. In order to keep mask object reusable, they are cached regardless whether option is enabled or not,
+		-- thus to properly rid of them M.clearBinaryData() should be used accordingly when no longer needed.
 		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
 
 		local filename = filename_
@@ -826,14 +827,9 @@ local M = {}
 
 		-- create newMask
 		local newMask = graphics.newMask( currentArchive.binaryData[filename].filename, currentArchive.binaryData[filename].baseDir )
-			obj_:setMask(newMask)
-			
-		-- do not cache data if enableCache is not set 'true'
-		if not currentArchive.enableCache then
-			currentArchive.binaryData[filename]:releaseSelf()
-			currentArchive.binaryData[filename] = nil
-		end
-	end
+
+		return newMask
+    end
 
 	function M.newOutline(coarsenessInTexels_, filename_)
 		-- Returns image outline from graphics library.
@@ -940,6 +936,29 @@ local M = {}
 
 			currentArchive.binaryData[filename2]:releaseSelf()
 			currentArchive.binaryData[filename2] = nil
+		end
+	end
+
+	function M.setMask(obj_, filename_)
+		-- Applies a newMask from graphics library. Module cache is included when using masks with this function.
+		if not currentArchive then sendToConsole("Error: [BinaryArchiveModule] No archive loaded.") ; printDebug() return false end
+
+		local filename = filename_
+
+		-- fetch non-suffixed file data
+		if not currentArchive[filename] then sendToConsole("Error: [BinaryArchiveModule] File '" .. filename .. "' not found.") ; printDebug() return false end
+
+		-- load texture if not previously loaded, or removed.
+		if not currentArchive.binaryData[filename] then loadTexture(filename, true) end
+
+		-- create newMask
+		local newMask = graphics.newMask( currentArchive.binaryData[filename].filename, currentArchive.binaryData[filename].baseDir )
+			obj_:setMask(newMask)
+			
+		-- do not cache data if enableCache is not set 'true'
+		if not currentArchive.enableCache then
+			currentArchive.binaryData[filename]:releaseSelf()
+			currentArchive.binaryData[filename] = nil
 		end
 	end
 
