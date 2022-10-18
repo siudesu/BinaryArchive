@@ -109,6 +109,7 @@ These are designed to work in place of Solar2D API functions by the same name:
 ### From `graphics.*` API:
 ```lua
 	MODULE.newImageSheet( filename, options )
+	MODULE.newMask( filename )
 	MODULE.newOutline( coarsenessInTexels, imageFileName )
 	MODULE.newTexture( params ) -- this returns a Bytemap texture used as a replacement for [graphics.newTexure](https://docs.coronalabs.com/api/library/graphics/newTexture.html)
 ```

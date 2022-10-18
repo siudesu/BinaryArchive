@@ -988,6 +988,17 @@ Returns an [ImageSheet](https://docs.coronalabs.com/api/type/ImageSheet/index.ht
 
 </br>
 
+# *.newMask
+Returns a [Mask](https://docs.coronalabs.com/api/type/Mask/index.html) object.
+### Syntax:
+- MODULE.newMask( filename )
+
+### Parameters:
+- Only `filename` is required. Returns a Mask object that works the same as a graphics.newMask().
+> Note: In order to keep mask object reusable, they are not disposed of automatically, and should be removed with [*.releaseTexture](#releaseTexture) when no longer needed. Alternatively, you can use [*.setMask](#setMask) if you want to set a mask and not worry about releasing it yourself later.
+
+</br>
+
 # *.newTexture
 Returns a [TextureResource](https://docs.coronalabs.com/api/type/TextureResource/index.html) object.
 ### Syntax:
@@ -995,7 +1006,7 @@ Returns a [TextureResource](https://docs.coronalabs.com/api/type/TextureResource
 
 ### Parameters:
 - Only `filename` is required. Returns a Bytemap texture that works similar to graphics.newTexture().
-> Note: Similar to graphics.newTexture, these are not disposed automatically, and should be removed with *..
+> Note: Similar to graphics.newTexture, these are not disposed automatically, and should be removed with [*.releaseTexture](#releaseTexture).
 
 </br>
 
