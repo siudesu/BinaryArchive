@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2022.10.18
+--	Last Revision: 2023.06.27
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -37,6 +37,7 @@ local s_gsub = string.gsub
 local s_len = string.len
 local s_match = string.match
 local s_sub = string.sub
+local t_concat = table.concat
 local t_sort = table.sort
 
 
@@ -56,6 +57,10 @@ local defaultOutputName = "data.bin"
 
 -- module
 local M = {}
+
+	-- List of special characters in Lua patterns
+	local specialChars = {["%"] = true, ["("] = true, [")"] = true, ["."] = true, ["["] = true, ["]"] = true, ["+"] = true, ["-"] = true, ["*"] = true, ["?"] = true, ["^"] = true, ["$"] = true}
+
 
 	local function printDebug()
 		if not debugMode then return end
@@ -141,6 +146,20 @@ local M = {}
 		-- Returns all chars after last dot in string.
 		local pos = s_match(string_, ".*%.()")
 		return pos and s_sub(string_, pos) or false
+	end
+
+	local function escapePattern(pattern)
+		-- Escape each special character in the pattern
+		local escapedChars = {}
+		pattern:gsub("[%z\1-\127\194-\244][\128-\191]*", function(c)
+			-- Check if the character is a special character
+			if specialChars[c] then
+				-- Escape the special character by prepending it with a percent sign
+				c = "%" .. c
+			end
+			escapedChars[#escapedChars+1] = c
+		end)
+		return t_concat(escapedChars)
 	end
 
 	local function getFileList(baseDir_, exclude_)
