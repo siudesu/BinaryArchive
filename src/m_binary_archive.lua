@@ -170,7 +170,7 @@ local M = {}
 		if not exclude then	-- will add all files without restriction
 			for filename, attr in dirtree(path) do
 			   if attr.mode == "file" then
-					list[#list+1] = s_gsub(filename, path .. "/", "")
+					list[#list+1] = s_gsub(filename, escapePattern(path .. "/"), "")
 			   end
 			end
 		else -- use exclude table to filter files by file extension
@@ -178,7 +178,7 @@ local M = {}
 			   if attr.mode == "file" then
 					local fileExtension = getFileExtension(filename)
 					if not exclude[fileExtension] then -- add file to list if file extension is not in exclude table or value is false
-						list[#list+1] = s_gsub(filename, path .. "/", "")
+						list[#list+1] = s_gsub(filename, escapePattern(path .. "/"), "")
 					end
 			   end
 			end
