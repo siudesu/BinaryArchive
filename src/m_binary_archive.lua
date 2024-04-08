@@ -506,7 +506,7 @@ local M = {}
 			local binData = binFile:read( "*all" )
 			io_close( binFile )
 
-		local encyrptedData = openssl and cipher:encrypt( binData, archive.key ) or binData
+		local finalData = openssl and cipher:encrypt( binData, archive.key ) or binData
 
 		local file, err = io_open(archive.path, 'ab')
 			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
