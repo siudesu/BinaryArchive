@@ -1,5 +1,5 @@
 --  Binary Archive Module
---	Last Revision: 2023.06.27
+--	Last Revision: 2024.03.09
 --	Lua version: 5.1
 --	License: MIT
 --	Copyright <2022> <siu>
@@ -296,6 +296,7 @@ local M = {}
 			binaryArchiveData.imageSuffix = imageSuffix	-- must match table in config.lua
 			binaryArchiveData.signature = signature
 			binaryArchiveData.key = key
+			binaryArchiveData.indexList = {}
 
 		-- open binary archive file from app's directory.
 		local path = overWritePath and fileToload or system.pathForFile( fileToload, system.ResourceDirectory)
@@ -320,7 +321,8 @@ local M = {}
 		
 		if filename then -- continue to load only if at least 1 file exists.
 			binaryArchiveData[filename] = {bytes=bytes}
-			
+			binaryArchiveData.indexList[#binaryArchiveData.indexList+1] = filename
+		
 			-- set offset value for next file; this is the start next file data. All offsets are based off the beginning of binary archive file.
 			binaryArchiveData[filename].offset = signatureSize + indexCounterSize
 										+ s_len(filename) + delimiterSize
@@ -340,6 +342,7 @@ local M = {}
 											+ s_len(bytes) + delimiterSize
 
 				lastEntry = binaryArchiveData[filename]
+				binaryArchiveData.indexList[#binaryArchiveData.indexList+1] = filename
 			end
 		end
 		io_close( binFile )
@@ -477,19 +480,32 @@ local M = {}
 	end
 
 	-- append Data ; appends a string of data.
-	function M.appendData(name_, data_, binaryArchiveData_)
+		function M.appendData(name_, data_, binaryArchiveData_)
 		local archive = binaryArchiveData_ or currentArchive
 		if archive[name_] then sendToConsole("Error: [BinaryArchiveModule] Append Data failed, name already exists: " .. name_ ) ; printDebug() return false end
 		local finalData = openssl and cipher:encrypt( data_, archive.key ) or data_
 		local file, err = io_open(archive.path, 'ab')
 			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", file)
-
-			file:write(name_ .. delimiter)				-- append file name
-			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
-			file:write(finalData)						-- append data
+			
+			local fileSize = s_len(finalData)
+			file:write(name_ .. delimiter)    -- append file name
+			file:write(fileSize .. delimiter) -- append data size in bytes
+			file:write(finalData)             -- append data
 			io_close(file)
-			sendToConsole("[BinaryArchiveModule] Added data:", name_)
+
+			-- update loaded archive data table
+			local lastEntry = archive[archive.indexList[#archive.indexList]]
+
+			archive[name_] = {bytes=fileSize}
+			archive[name_].offset = (lastEntry and (lastEntry.offset + lastEntry.bytes) or (s_len(archive.signature) + delimiterSize + indexCounterSize))
+											+ s_len(name_) + delimiterSize
+											+ s_len(fileSize) + delimiterSize
+
+			-- set as last file in index
+			archive.indexList[#archive.indexList+1] = name_
+			
+			sendToConsole("[BinaryArchiveModule] Added file:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
 		return true
 	end
@@ -512,10 +528,23 @@ local M = {}
 			if not file then sendToConsole("Error: [BinaryArchiveModule] Could not open " .. err) ; printDebug() return false end
 			sendToConsole("[BinaryArchiveModule] Opening archive", file)
 			
-			file:write(name_ .. delimiter)					-- append file name
-			file:write(s_len(finalData) .. delimiter)	-- append data size in bytes
-			file:write(finalData)						-- append data
+			local fileSize = s_len(finalData)
+			file:write(name_ .. delimiter)    -- append file name
+			file:write(fileSize .. delimiter) -- append data size in bytes
+			file:write(finalData)             -- append data
 			io_close(file)
+			
+			-- update loaded archive data table
+			local lastEntry = archive[archive.indexList[#archive.indexList]]
+
+			archive[name_] = {bytes=fileSize}
+			archive[name_].offset = (lastEntry and (lastEntry.offset + lastEntry.bytes) or (s_len(archive.signature) + delimiterSize + indexCounterSize))
+											+ s_len(name_) + delimiterSize
+											+ s_len(fileSize) + delimiterSize
+
+			-- set as last file in index
+			archive.indexList[#archive.indexList+1] = name_
+			
 			sendToConsole("[BinaryArchiveModule] Added file:", name_)
 			updateTotalFiles(archive.path, archive.totalFiles+1)
 		return true
